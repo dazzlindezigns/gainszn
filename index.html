@@ -175,6 +175,7 @@
       font-size: 42px;
       letter-spacing: 3px;
       line-height: 1;
+      transition: opacity 0.4s ease;
     }
 
     .home-hero .subline {
@@ -1597,16 +1598,39 @@ function checkMissedMeal() {
 /* =============================================
    GREETING
 ============================================= */
+const HYPE_QUOTES = [
+  'FEED THE WOLF',
+  'NO DAYS OFF',
+  'LOCK IN.',
+  'BUILT DIFFERENT',
+  'STACK THE PLATE',
+  'EAT. TRAIN. REPEAT.',
+  'THE WORK IS REAL',
+  'DON\'T SKIP THE MEAL',
+  'WOLVES DON\'T WAIT',
+  'NO CAP. EAT.',
+  '160 OR BUST',
+  'BULK SZN.',
+  'EVERY REP. EVERY MEAL.',
+  'STAY ON IT.',
+  'GAINSZN NEVER STOPS',
+];
+
+let _hypeIdx = Math.floor(Math.random() * HYPE_QUOTES.length);
+
 function setGreeting() {
-  const h = new Date().getHours();
-  let g;
-  if (h < 10) g = 'RISE & EAT';
-  else if (h < 12) g = 'STACK IT UP';
-  else if (h < 15) g = 'KEEP FEEDING';
-  else if (h < 18) g = 'AFTERNOON RUN';
-  else if (h < 21) g = 'DINNER TIME';
-  else g = 'NIGHT GRIND';
-  document.getElementById('greeting-text').textContent = g;
+  const el = document.getElementById('greeting-text');
+  el.textContent = HYPE_QUOTES[_hypeIdx];
+}
+
+function rotateGreeting() {
+  const el = document.getElementById('greeting-text');
+  el.style.opacity = '0';
+  setTimeout(() => {
+    _hypeIdx = (_hypeIdx + 1) % HYPE_QUOTES.length;
+    el.textContent = HYPE_QUOTES[_hypeIdx];
+    el.style.opacity = '1';
+  }, 400);
 }
 
 /* =============================================
@@ -2123,6 +2147,9 @@ function init() {
   renderSchedule();
   renderFood();
   checkNotifPermission();
+
+  // Rotate hype quote every 5 seconds
+  setInterval(rotateGreeting, 5000);
 
   // Auto-refresh home every minute
   setInterval(() => {
