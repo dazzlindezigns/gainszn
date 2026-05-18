@@ -1162,6 +1162,153 @@
       margin-left: 8px;
       vertical-align: middle;
     }
+
+    /* =============================================
+       WEIGH-IN CARD
+    ============================================= */
+    .weighin-card {
+      margin: 0 20px 16px;
+      background: var(--black-card);
+      border: 1px solid var(--black-border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .weighin-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px 10px;
+    }
+
+    .weighin-top .wi-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--gray);
+      text-transform: uppercase;
+    }
+
+    .log-weight-btn {
+      background: var(--red);
+      border: none;
+      border-radius: 8px;
+      color: var(--white);
+      font-family: var(--font-ui);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      cursor: pointer;
+    }
+
+    .log-weight-btn:active { background: var(--red-dark); }
+
+    .weighin-stats {
+      display: flex;
+      padding: 0 16px 14px;
+      gap: 20px;
+    }
+
+    .wi-stat .wi-val {
+      font-family: var(--font-display);
+      font-size: 36px;
+      letter-spacing: 2px;
+      line-height: 1;
+    }
+
+    .wi-stat .wi-val.green { color: #4ade80; }
+    .wi-stat .wi-val.red-col { color: var(--red); }
+
+    .wi-stat .wi-sub {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      color: var(--gray);
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .weighin-progress {
+      padding: 0 16px 10px;
+    }
+
+    .wp-bar-bg {
+      height: 6px;
+      background: var(--black-border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .wp-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--red), #ff4444);
+      border-radius: 3px;
+      transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    .wp-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 5px;
+      font-size: 11px;
+      color: var(--gray);
+      font-weight: 600;
+    }
+
+    .weighin-praise {
+      padding: 8px 16px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--gray-light);
+      font-style: italic;
+    }
+
+    .weighin-history {
+      border-top: 1px solid var(--black-border);
+      padding: 10px 16px 12px;
+    }
+
+    .wh-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--gray);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .wh-entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--black-border);
+      font-size: 13px;
+    }
+
+    .wh-entry:last-child { border-bottom: none; }
+
+    .wh-entry .wh-date { color: var(--gray); font-weight: 500; }
+    .wh-entry .wh-weight { font-family: var(--font-display); font-size: 18px; letter-spacing: 1px; }
+    .wh-entry .wh-delta {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .wh-entry .wh-delta.up { background: #1a3a1a; color: #4ade80; }
+    .wh-entry .wh-delta.down { background: #3a1a1a; color: #f87171; }
+    .wh-entry .wh-delta.same { background: var(--black-border); color: var(--gray); }
+
+    .wi-empty {
+      font-size: 12px;
+      color: var(--gray);
+      text-align: center;
+      padding: 10px 0 4px;
+    }
   </style>
 </head>
 <body>
@@ -1234,6 +1381,38 @@
         <div class="nm-time" id="nm-time">—</div>
         <div class="nm-desc" id="nm-desc">Loading...</div>
         <div class="nm-countdown" id="nm-countdown"></div>
+      </div>
+
+      <!-- Weigh-In Card -->
+      <div class="weighin-card">
+        <div class="weighin-top">
+          <div class="wi-label">Weight Tracker</div>
+          <button class="log-weight-btn" onclick="openWeighInModal()">+ Log Weight</button>
+        </div>
+        <div class="weighin-stats" id="wi-stats">
+          <div class="wi-stat">
+            <div class="wi-val" id="wi-current">—</div>
+            <div class="wi-sub">Current (lbs)</div>
+          </div>
+          <div class="wi-stat">
+            <div class="wi-val green" id="wi-gain">+0</div>
+            <div class="wi-sub">Gained</div>
+          </div>
+          <div class="wi-stat">
+            <div class="wi-val red-col" id="wi-togo">20</div>
+            <div class="wi-sub">To Goal</div>
+          </div>
+        </div>
+        <div class="weighin-progress">
+          <div class="wp-bar-bg"><div class="wp-bar-fill" id="wi-bar" style="width:0%"></div></div>
+          <div class="wp-labels">
+            <span>140 lbs</span>
+            <span id="wi-pct">0%</span>
+            <span>160 lbs</span>
+          </div>
+        </div>
+        <div class="weighin-praise" id="wi-praise"></div>
+        <div class="weighin-history" id="wi-history"></div>
       </div>
 
     </div>
@@ -1398,6 +1577,24 @@
     <div class="dash-log-title">TODAY'S FULL LOG</div>
     <div id="dash-log-entries"></div>
     <button class="share-btn" onclick="shareSummary()">SHARE SUMMARY</button>
+  </div>
+</div>
+
+<!-- WEIGH-IN MODAL -->
+<div class="modal-overlay" id="weighin-modal" onclick="closeWeighInModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>LOG WEIGHT</h3>
+    <div class="form-group">
+      <label>Current Weight (lbs)</label>
+      <input type="number" id="wi-input" placeholder="e.g. 143.5" min="100" max="300" step="0.1" />
+    </div>
+    <div class="form-group">
+      <label>Note (optional)</label>
+      <input type="text" id="wi-note" placeholder="e.g. morning, post-practice" autocomplete="off" />
+    </div>
+    <button class="btn-primary" onclick="submitWeighIn()">LOCK IT IN</button>
+    <button class="btn-secondary" onclick="closeWeighInModal()">Cancel</button>
   </div>
 </div>
 
@@ -2166,6 +2363,7 @@ function init() {
   renderLog();
   renderSchedule();
   renderFood();
+  renderWeighIn();
   checkNotifPermission();
 
   // Rotate hype quote every 8 seconds
@@ -2188,6 +2386,127 @@ function init() {
       updateHome();
     }
   }, 60000);
+}
+
+/* =============================================
+   WEIGH-IN
+============================================= */
+const WEIGHT_START = 140;
+const WEIGHT_GOAL  = 160;
+const WEIGHIN_KEY  = 'gainszn_weighins';
+
+function loadWeighIns() {
+  try { return JSON.parse(localStorage.getItem(WEIGHIN_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveWeighIns(data) {
+  localStorage.setItem(WEIGHIN_KEY, JSON.stringify(data));
+}
+
+function openWeighInModal() {
+  document.getElementById('wi-input').value = '';
+  document.getElementById('wi-note').value = '';
+  document.getElementById('weighin-modal').classList.add('show');
+  setTimeout(() => document.getElementById('wi-input').focus(), 300);
+}
+
+function closeWeighInModal(e) {
+  if (e && e.target !== document.getElementById('weighin-modal')) return;
+  document.getElementById('weighin-modal').classList.remove('show');
+}
+
+function submitWeighIn() {
+  const raw = document.getElementById('wi-input').value;
+  const weight = parseFloat(raw);
+  if (!raw || isNaN(weight) || weight < 100 || weight > 300) {
+    showToast('Enter a valid weight (lbs).');
+    document.getElementById('wi-input').focus();
+    return;
+  }
+  const note = document.getElementById('wi-note').value.trim();
+  const now = new Date();
+  const entry = {
+    weight,
+    note,
+    ts: now.getTime(),
+    date: now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+  };
+
+  const data = loadWeighIns();
+  data.push(entry);
+  saveWeighIns(data);
+
+  document.getElementById('weighin-modal').classList.remove('show');
+  renderWeighIn();
+
+  const gain = parseFloat((weight - WEIGHT_START).toFixed(1));
+  const praise = getWeightPraise(weight, gain, data.length);
+  showToast(praise, 3500);
+}
+
+function renderWeighIn() {
+  const data = loadWeighIns();
+  const latest = data.length > 0 ? data[data.length - 1] : null;
+  const current = latest ? latest.weight : null;
+
+  // Stats
+  const gain = current !== null ? parseFloat((current - WEIGHT_START).toFixed(1)) : 0;
+  const togo = current !== null ? Math.max(0, parseFloat((WEIGHT_GOAL - current).toFixed(1))) : WEIGHT_GOAL - WEIGHT_START;
+  const pct = current !== null
+    ? Math.min(100, Math.round(((current - WEIGHT_START) / (WEIGHT_GOAL - WEIGHT_START)) * 100))
+    : 0;
+
+  document.getElementById('wi-current').textContent = current !== null ? current : '—';
+  document.getElementById('wi-gain').textContent = current !== null ? (gain >= 0 ? '+' + gain : gain) : '+0';
+  document.getElementById('wi-togo').textContent = current !== null ? togo : (WEIGHT_GOAL - WEIGHT_START);
+  document.getElementById('wi-bar').style.width = pct + '%';
+  document.getElementById('wi-pct').textContent = pct + '%';
+
+  // Praise line
+  document.getElementById('wi-praise').textContent =
+    current !== null ? '"' + getWeightPraise(current, gain, data.length) + '"' : '';
+
+  // History (last 7, newest first)
+  const histEl = document.getElementById('wi-history');
+  const last7 = data.slice(-7).reverse();
+
+  if (last7.length === 0) {
+    histEl.innerHTML = '<div class="wh-title">Weigh-In History</div><div class="wi-empty">No weigh-ins yet. Log your first one.</div>';
+    return;
+  }
+
+  const rows = last7.map((e, i) => {
+    const prev = last7[i + 1];
+    let deltaHtml = '';
+    if (prev) {
+      const diff = parseFloat((e.weight - prev.weight).toFixed(1));
+      const cls = diff > 0 ? 'up' : diff < 0 ? 'down' : 'same';
+      const sign = diff > 0 ? '+' : '';
+      deltaHtml = `<span class="wh-delta ${cls}">${sign}${diff}</span>`;
+    }
+    return `
+      <div class="wh-entry">
+        <span class="wh-date">${e.date}${e.note ? ' · ' + esc(e.note) : ''}</span>
+        <span class="wh-weight">${e.weight} lbs</span>
+        ${deltaHtml}
+      </div>`;
+  }).join('');
+
+  histEl.innerHTML = '<div class="wh-title">Last ' + last7.length + ' Weigh-Ins</div>' + rows;
+}
+
+function getWeightPraise(weight, gain, count) {
+  if (gain <= 0)   return "Day one. Start logging. The scale doesn't lie.";
+  if (gain < 2)    return "The grind just started. Eat every window. No skips.";
+  if (gain < 5)    return `+${gain} lbs. It's moving. Stay consistent.`;
+  if (gain < 8)    return `+${gain} lbs on the board. Valid. Keep stacking the plate.`;
+  if (gain < 10)   return `+${gain} lbs. Real progress. The work is showing up.`;
+  if (gain < 12)   return `+${gain} lbs. Halfway there. Wolves don't stop mid-run.`;
+  if (gain < 15)   return `+${gain} lbs. You're built different. 160 is right there.`;
+  if (gain < 18)   return `+${gain} lbs. Almost at goal. Lock in every meal.`;
+  if (weight >= WEIGHT_GOAL) return `${weight} lbs. GOAL HIT. They'll notice in August. 🐺`;
+  return `${weight} lbs. You already made history. Now make weight.`;
 }
 
 document.addEventListener('DOMContentLoaded', init);
