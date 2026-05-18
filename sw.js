@@ -1,8 +1,5 @@
-const CACHE_NAME = 'gainszn-v2';
+const CACHE_NAME = 'gainszn-v3';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
   'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600;700&display=swap'
@@ -32,6 +29,22 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+
+  // Network-first for HTML documents so updates always land immediately
+  if (e.request.destination === 'document' || e.request.url.endsWith('.html')) {
+    e.respondWith(
+      fetch(e.request)
+        .then(resp => {
+          const clone = resp.clone();
+          caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+          return resp;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Cache-first for everything else (icons, fonts)
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
@@ -41,10 +54,6 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
         }
         return resp;
-      }).catch(() => {
-        if (e.request.destination === 'document') {
-          return caches.match('/index.html');
-        }
       });
     })
   );
