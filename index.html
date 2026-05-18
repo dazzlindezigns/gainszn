@@ -1614,6 +1614,26 @@ const HYPE_QUOTES = [
   'EVERY REP. EVERY MEAL.',
   'STAY ON IT.',
   'GAINSZN NEVER STOPS',
+  'STATE OF MIND.',
+  'WEISS WOLVES EAT FIRST.',
+  'HIT DIFFERENT THIS SEASON.',
+  'THEY\'LL NOTICE IN AUGUST.',
+  'BUILT IN THE OFFSEASON.',
+  'FIRST TO STATE. NOT LAST TO PLATE.',
+  '4X100. 4X MEALS.',
+  '7TH IN TEXAS. 1ST TO THE KITCHEN.',
+  'THEY RAN FOR HISTORY. YOU EAT FOR LEGACY.',
+  'MOVE FAST. EAT SLOW.',
+  'THE DRIP NEEDS FUEL.',
+  'EVEN THE SMOOTHEST MOVES NEED CALORIES.',
+  'CAN\'T DANCE ON AN EMPTY STOMACH.',
+  'KJ DON\'T PLAY.',
+  'VALID. NOW EAT.',
+  'REAL ONES EAT ON SCHEDULE.',
+  'THE GOAL DOESN\'T WAIT.',
+  'NO EXCUSES. JUST PLATES.',
+  'CONSISTENCY IS THE CHEAT CODE.',
+  'YOU ALREADY MADE HISTORY. NOW MAKE WEIGHT.',
 ];
 
 let _hypeIdx = Math.floor(Math.random() * HYPE_QUOTES.length);
@@ -2148,8 +2168,8 @@ function init() {
   renderFood();
   checkNotifPermission();
 
-  // Rotate hype quote every 5 seconds
-  setInterval(rotateGreeting, 5000);
+  // Rotate hype quote every 8 seconds
+  setInterval(rotateGreeting, 8000);
 
   // Auto-refresh home every minute
   setInterval(() => {
