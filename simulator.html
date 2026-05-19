@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GainSzn — Flow Simulator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red: #cc0000;
+      --black: #0a0a0a;
+      --black-card: #141414;
+      --black-border: #222;
+      --white: #f5f5f5;
+      --gray: #666;
+      --gray-light: #999;
+      --font-display: 'Bebas Neue', sans-serif;
+      --font-ui: 'Barlow Condensed', sans-serif;
+    }
+
+    body {
+      background: #0d0d0d;
+      font-family: var(--font-ui);
+      color: var(--white);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px 60px;
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: 28px;
+      letter-spacing: 4px;
+      color: var(--red);
+      margin-bottom: 4px;
+    }
+
+    .sim-subtitle {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      color: var(--gray);
+      text-transform: uppercase;
+      margin-bottom: 36px;
+    }
+
+    /* Flow nav */
+    .flow-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 32px;
+      max-width: 900px;
+    }
+
+    .flow-btn {
+      background: var(--black-card);
+      border: 1px solid var(--black-border);
+      color: var(--gray-light);
+      font-family: var(--font-ui);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .flow-btn:hover { border-color: var(--gray); color: var(--white); }
+    .flow-btn.active { background: var(--red); border-color: var(--red); color: var(--white); }
+
+    /* Phone grid */
+    .phones-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 28px;
+      justify-content: center;
+      max-width: 1200px;
+    }
+
+    .phone-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .phone-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--gray);
+      text-transform: uppercase;
+    }
+
+    .phone-step {
+      font-size: 10px;
+      color: var(--red);
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* Phone frame */
+    .phone {
+      width: 320px;
+      height: 640px;
+      background: var(--black);
+      border: 2px solid #333;
+      border-radius: 36px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8), inset 0 0 0 1px #444;
+    }
+
+    .phone-notch {
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 100px; height: 24px;
+      background: #111;
+      border-radius: 0 0 16px 16px;
+      z-index: 10;
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: none;
+      padding-top: 28px;
+    }
+
+    .phone-screen::-webkit-scrollbar { display: none; }
+
+    /* ── SHARED COMPONENTS ── */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 16px 6px;
+      border-bottom: 1px solid var(--black-border);
+    }
+
+    .logo { font-family: var(--font-display); font-size: 20px; letter-spacing: 3px; color: var(--red); }
+    .tagline { font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--gray); margin-top: 1px; }
+
+    .top-bar-right { display: flex; gap: 6px; align-items: center; }
+
+    .avatar-btn {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--red); color: var(--white);
+      font-family: var(--font-display); font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+      border: none; cursor: pointer;
+    }
+
+    .parent-btn {
+      background: none; border: 1px solid var(--black-border);
+      color: var(--white); font-family: var(--font-ui);
+      font-size: 10px; font-weight: 700; letter-spacing: 1px;
+      padding: 5px 10px; border-radius: 6px; cursor: pointer;
+    }
+
+    /* Ring */
+    .ring-wrap {
+      display: flex; flex-direction: column;
+      align-items: center; padding: 16px;
+    }
+
+    .ring-motivational {
+      font-size: 10px; font-weight: 700; letter-spacing: 2px;
+      color: var(--red); text-transform: uppercase; margin-top: 6px;
+    }
+
+    /* Stats cards */
+    .quick-stats {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px; padding: 0 12px 12px;
+    }
+
+    .stat-card {
+      background: var(--black-card);
+      border: 1px solid var(--black-border);
+      border-radius: 10px; padding: 12px;
+    }
+
+    .stat-val { font-family: var(--font-display); font-size: 28px; letter-spacing: 1px; }
+    .stat-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--gray); text-transform: uppercase; margin-top: 2px; }
+
+    /* Weigh-in card */
+    .wi-card {
+      margin: 0 12px 12px;
+      background: var(--black-card);
+      border: 1px solid var(--black-border);
+      border-radius: 12px; overflow: hidden;
+    }
+
+    .wi-top {
+      display: flex; justify-content: space-between;
+      align-items: center; padding: 10px 12px 8px;
+    }
+
+    .wi-top-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: var(--gray); text-transform: uppercase; }
+
+    .log-w-btn {
+      background: var(--red); border: none; border-radius: 6px;
+      color: var(--white); font-family: var(--font-ui);
+      font-size: 10px; font-weight: 700; letter-spacing: 1px;
+      padding: 4px 10px; cursor: pointer;
+    }
+
+    .wi-stats-row { display: flex; gap: 16px; padding: 0 12px 10px; }
+
+    .wi-s-val { font-family: var(--font-display); font-size: 28px; letter-spacing: 1px; }
+    .wi-s-val.green { color: #4ade80; }
+    .wi-s-val.red-col { color: var(--red); }
+    .wi-s-sub { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--gray); text-transform: uppercase; margin-top: 1px; }
+
+    .wi-bar-wrap { padding: 0 12px 10px; }
+    .wi-bar-bg { height: 5px; background: var(--black-border); border-radius: 3px; overflow: hidden; }
+    .wi-bar-fill { height: 100%; background: linear-gradient(90deg, var(--red), #ff4444); border-radius: 3px; }
+    .wi-bar-labels { display: flex; justify-content: space-between; margin-top: 4px; font-size: 10px; color: var(--gray); }
+
+    .wi-praise { padding: 4px 12px 12px; font-size: 11px; font-style: italic; color: var(--gray-light); font-weight: 700; }
+
+    /* Nav bar */
+    .nav-bar {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: #111; border-top: 1px solid var(--black-border);
+      display: flex; justify-content: space-around; padding: 8px 0 16px;
+    }
+
+    .nav-item {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 3px;
+      font-size: 9px; font-weight: 700; letter-spacing: 1px;
+      color: var(--gray); text-transform: uppercase; cursor: pointer;
+    }
+
+    .nav-item.active { color: var(--red); }
+    .nav-icon { font-size: 18px; }
+
+    /* Next meal card */
+    .next-meal-card {
+      margin: 0 12px 10px;
+      background: var(--black-card); border: 1px solid var(--black-border);
+      border-radius: 10px; padding: 10px 12px;
+    }
+
+    .nm-label { font-size: 9px; font-weight: 700; letter-spacing: 2px; color: var(--gray); text-transform: uppercase; }
+    .nm-time { font-family: var(--font-display); font-size: 22px; letter-spacing: 2px; margin-top: 2px; }
+    .nm-desc { font-size: 11px; color: var(--gray-light); margin-top: 2px; }
+
+    /* ── PROFILE SHEET overlay ── */
+    .overlay-sheet {
+      position: absolute; inset: 0; z-index: 50;
+      background: rgba(0,0,0,0.75);
+      display: flex; align-items: flex-end;
+    }
+
+    .sheet-inner {
+      background: var(--black-card);
+      border: 1px solid var(--black-border);
+      border-radius: 16px 16px 0 0;
+      width: 100%; padding: 16px 16px 32px;
+    }
+
+    .sheet-title {
+      font-size: 10px; font-weight: 700; letter-spacing: 2px;
+      color: var(--gray); text-transform: uppercase; margin-bottom: 12px;
+    }
+
+    .ps-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px; border-radius: 10px; margin-bottom: 6px;
+      border: 1px solid transparent;
+    }
+
+    .ps-row.active-p { border-color: var(--red); background: rgba(204,0,0,0.08); }
+
+    .ps-av {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--red); color: var(--white);
+      font-family: var(--font-display); font-size: 15px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .ps-av.gray { background: #333; }
+
+    .ps-nm { font-size: 15px; font-weight: 700; letter-spacing: 1px; }
+    .ps-sp { font-size: 10px; color: var(--gray); margin-top: 1px; }
+
+    .ps-add {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px; border-radius: 10px;
+      border: 1px dashed var(--black-border); background: none;
+      color: var(--gray); font-family: var(--font-ui);
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; width: 100%; margin-top: 4px;
+    }
+
+    .ps-add-av {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--black-border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; color: var(--gray); flex-shrink: 0;
+    }
+
+    /* ── ONBOARDING ── */
+    .ob-screen {
+      padding: 32px 16px 80px;
+    }
+
+    .ob-logo { font-family: var(--font-display); font-size: 26px; letter-spacing: 3px; color: var(--red); margin-bottom: 2px; }
+    .ob-tag { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: var(--gray); text-transform: uppercase; margin-bottom: 24px; }
+    .ob-head { font-family: var(--font-display); font-size: 22px; letter-spacing: 2px; margin-bottom: 4px; }
+    .ob-sub { font-size: 11px; color: var(--gray); margin-bottom: 20px; }
+
+    .form-grp { margin-bottom: 14px; }
+    .form-grp label { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--gray); text-transform: uppercase; display: block; margin-bottom: 5px; }
+    .form-grp input {
+      width: 100%; background: var(--black-card);
+      border: 1px solid var(--black-border); border-radius: 8px;
+      color: var(--white); font-family: var(--font-ui); font-size: 14px;
+      padding: 10px 12px; outline: none;
+    }
+
+    .form-grp input.filled { border-color: var(--red); }
+
+    .btn-primary {
+      width: 100%; background: var(--red); border: none;
+      border-radius: 10px; color: var(--white);
+      font-family: var(--font-display); font-size: 18px;
+      letter-spacing: 2px; padding: 14px;
+      cursor: pointer; margin-top: 8px;
+    }
+
+    /* ── PARENT DASHBOARD ── */
+    .parent-overlay-screen {
+      padding-top: 0;
+      height: 100%;
+      overflow-y: auto;
+    }
+
+    .parent-header {
+      background: var(--black-card);
+      border-bottom: 1px solid var(--black-border);
+      padding: 14px 16px 10px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .parent-header h2 { font-family: var(--font-display); font-size: 20px; letter-spacing: 2px; }
+    .close-x { background: none; border: none; color: var(--gray); font-size: 20px; cursor: pointer; }
+
+    .dash-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px; }
+
+    .dash-card {
+      background: var(--black-card); border: 1px solid var(--black-border);
+      border-radius: 10px; padding: 12px;
+    }
+
+    .dc-label { font-size: 9px; font-weight: 700; letter-spacing: 1px; color: var(--gray); text-transform: uppercase; }
+    .dc-val { font-family: var(--font-display); font-size: 26px; letter-spacing: 1px; margin-top: 4px; }
+    .dc-val.red { color: var(--red); }
+    .dc-sub { font-size: 10px; color: var(--gray); margin-top: 2px; }
+
+    .share-summary-btn {
+      margin: 0 12px 8px;
+      width: calc(100% - 24px);
+      background: var(--red); border: none;
+      border-radius: 10px; color: var(--white);
+      font-family: var(--font-display); font-size: 16px;
+      letter-spacing: 2px; padding: 12px;
+      cursor: pointer; display: block;
+    }
+
+    .share-setup-btn {
+      margin: 0 12px 12px;
+      width: calc(100% - 24px);
+      background: var(--black-border); border: none;
+      border-radius: 10px; color: var(--white);
+      font-family: var(--font-display); font-size: 16px;
+      letter-spacing: 2px; padding: 12px;
+      cursor: pointer; display: block;
+    }
+
+    /* ── SHARE MODAL ── */
+    .share-modal-overlay {
+      position: absolute; inset: 0; z-index: 60;
+      background: rgba(0,0,0,0.8);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+
+    .share-modal {
+      background: var(--black-card);
+      border: 1px solid var(--black-border);
+      border-radius: 16px; padding: 20px 16px 16px;
+      width: 100%; text-align: center;
+    }
+
+    .sm-title { font-family: var(--font-display); font-size: 20px; letter-spacing: 2px; margin-bottom: 4px; }
+    .sm-sub { font-size: 11px; color: var(--gray); margin-bottom: 14px; }
+
+    .qr-box {
+      background: #fff; border-radius: 10px;
+      padding: 10px; display: inline-block; margin-bottom: 12px;
+    }
+
+    .qr-placeholder {
+      width: 140px; height: 140px;
+      background: repeating-conic-gradient(#000 0% 25%, transparent 0% 50%) 0 0 / 10px 10px;
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; color: #999;
+    }
+
+    .link-box {
+      background: #111; border-radius: 6px;
+      padding: 6px 10px; margin-bottom: 12px;
+      font-size: 9px; color: var(--gray);
+      text-align: left; word-break: break-all;
+    }
+
+    .copy-btn {
+      width: 100%; background: var(--red); border: none;
+      border-radius: 8px; color: var(--white);
+      font-family: var(--font-display); font-size: 16px;
+      letter-spacing: 2px; padding: 10px; cursor: pointer;
+      margin-bottom: 6px;
+    }
+
+    .done-btn {
+      width: 100%; background: none;
+      border: 1px solid var(--black-border);
+      border-radius: 8px; color: var(--gray);
+      font-family: var(--font-ui); font-size: 13px;
+      font-weight: 700; letter-spacing: 1px;
+      padding: 8px; cursor: pointer;
+    }
+
+    /* ── IMPORT SCREEN ── */
+    .import-screen {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      min-height: 100%; padding: 32px 16px;
+    }
+
+    .import-av {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: var(--red); color: var(--white);
+      font-family: var(--font-display); font-size: 26px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .import-head { font-family: var(--font-display); font-size: 24px; letter-spacing: 2px; margin-bottom: 6px; text-align: center; }
+    .import-sub { font-size: 12px; color: var(--gray); text-align: center; margin-bottom: 20px; }
+
+    .import-details {
+      background: var(--black-card); border: 1px solid var(--black-border);
+      border-radius: 10px; padding: 12px;
+      width: 100%; margin-bottom: 20px;
+    }
+
+    .import-row {
+      display: flex; justify-content: space-between;
+      padding: 5px 0; border-bottom: 1px solid var(--black-border);
+      font-size: 12px;
+    }
+
+    .import-row:last-child { border-bottom: none; }
+    .ir-label { color: var(--gray); font-weight: 500; }
+    .ir-val { font-weight: 700; }
+
+    .import-skip-btn {
+      background: none; border: none; color: var(--gray);
+      font-size: 11px; text-decoration: underline;
+      cursor: pointer; font-family: var(--font-ui);
+      margin-top: 10px;
+    }
+
+    /* ── FLOW DESCRIPTIONS ── */
+    .flow-desc {
+      max-width: 900px; width: 100%;
+      margin-top: 28px;
+      background: #111;
+      border: 1px solid var(--black-border);
+      border-radius: 12px;
+      padding: 16px 20px;
+    }
+
+    .flow-desc h3 {
+      font-family: var(--font-display);
+      font-size: 16px; letter-spacing: 2px;
+      color: var(--red); margin-bottom: 10px;
+    }
+
+    .flow-steps { display: flex; flex-direction: column; gap: 6px; }
+
+    .flow-step {
+      display: flex; gap: 12px; align-items: flex-start;
+      font-size: 13px; color: var(--gray-light);
+    }
+
+    .step-num {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--red); color: var(--white);
+      font-size: 10px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+
+    .step-arrow {
+      color: var(--red); font-weight: 700;
+      width: 20px; text-align: center; flex-shrink: 0;
+    }
+
+    .hidden { display: none !important; }
+
+    /* Pin screen */
+    .pin-screen {
+      display: flex; flex-direction: column;
+      align-items: center; padding: 40px 20px;
+    }
+
+    .pin-title { font-family: var(--font-display); font-size: 22px; letter-spacing: 2px; margin-bottom: 6px; }
+    .pin-sub { font-size: 11px; color: var(--gray); margin-bottom: 24px; }
+
+    .pin-dots { display: flex; gap: 10px; margin-bottom: 24px; }
+
+    .pin-dot {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid var(--black-border); background: none;
+    }
+
+    .pin-dot.filled { background: var(--red); border-color: var(--red); }
+
+    .pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 220px; }
+
+    .pin-key {
+      background: var(--black-card); border: 1px solid var(--black-border);
+      border-radius: 10px; padding: 14px;
+      font-family: var(--font-display); font-size: 22px;
+      text-align: center; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<h1>GAINSZN</h1>
+<div class="sim-subtitle">Mobile Flow Simulator</div>
+
+<div class="flow-nav">
+  <button class="flow-btn active" onclick="showFlow('home')">Home Screen</button>
+  <button class="flow-btn" onclick="showFlow('switch')">Switch Athlete</button>
+  <button class="flow-btn" onclick="showFlow('add')">Add New Athlete</button>
+  <button class="flow-btn" onclick="showFlow('parent')">Parent Dashboard</button>
+  <button class="flow-btn" onclick="showFlow('share')">Share Setup Link</button>
+  <button class="flow-btn" onclick="showFlow('import')">Athlete Imports</button>
+</div>
+
+<!-- ─── HOME SCREEN ─── -->
+<div class="phones-grid" id="flow-home">
+
+  <div class="phone-wrap">
+    <div class="phone-label">KJ's Phone</div>
+    <div class="phone-step">Home Screen</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="top-bar">
+          <div>
+            <div class="logo">GAINSZN</div>
+            <div class="tagline">Football · Dance</div>
+          </div>
+          <div class="top-bar-right">
+            <div class="avatar-btn">KJ</div>
+            <button class="parent-btn">PARENT</button>
+          </div>
+        </div>
+
+        <div class="ring-wrap">
+          <svg width="160" height="160" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="67" fill="none" stroke="#222" stroke-width="11"/>
+            <circle cx="80" cy="80" r="67" fill="none" stroke="#cc0000" stroke-width="11"
+              stroke-linecap="round" stroke-dasharray="421" stroke-dashoffset="250"
+              transform="rotate(-90 80 80)"/>
+            <text x="80" y="74" text-anchor="middle" font-family="Bebas Neue" font-size="30" fill="#f5f5f5">2,100</text>
+            <text x="80" y="91" text-anchor="middle" font-family="Barlow Condensed" font-size="10" fill="#666" font-weight="700" letter-spacing="1">CAL TODAY</text>
+            <text x="80" y="106" text-anchor="middle" font-family="Barlow Condensed" font-size="9" fill="#666">/ 3,500 goal</text>
+          </svg>
+          <div class="ring-motivational">GAINSZN DON'T STOP FOR NOTHING.</div>
+        </div>
+
+        <div class="quick-stats">
+          <div class="stat-card">
+            <div class="stat-val">3</div>
+            <div class="stat-label">Meals Logged</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-val">OG</div>
+            <div class="stat-label">Protein</div>
+          </div>
+        </div>
+
+        <div class="next-meal-card">
+          <div class="nm-label">Next Meal Window</div>
+          <div class="nm-time">3:30 PM</div>
+          <div class="nm-desc">Afternoon Snack · 500 cal target</div>
+        </div>
+
+        <div class="wi-card">
+          <div class="wi-top">
+            <div class="wi-top-label">Weight Tracker</div>
+            <button class="log-w-btn">+ Log Weight</button>
+          </div>
+          <div class="wi-stats-row">
+            <div>
+              <div class="wi-s-val">143</div>
+              <div class="wi-s-sub">Current (lbs)</div>
+            </div>
+            <div>
+              <div class="wi-s-val green">+3</div>
+              <div class="wi-s-sub">Gained</div>
+            </div>
+            <div>
+              <div class="wi-s-val red-col">17</div>
+              <div class="wi-s-sub">To Goal</div>
+            </div>
+          </div>
+          <div class="wi-bar-wrap">
+            <div class="wi-bar-bg"><div class="wi-bar-fill" style="width:15%"></div></div>
+            <div class="wi-bar-labels"><span>140 lbs</span><span>15%</span><span>160 lbs</span></div>
+          </div>
+          <div class="wi-praise">"It's moving. Stay consistent."</div>
+        </div>
+
+        <div style="height:60px"></div>
+        <div class="nav-bar">
+          <div class="nav-item active"><div class="nav-icon">⌂</div>HOME</div>
+          <div class="nav-item"><div class="nav-icon">📋</div>LOG</div>
+          <div class="nav-item"><div class="nav-icon">📅</div>SCHEDULE</div>
+          <div class="nav-item"><div class="nav-icon">🍗</div>FOOD</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── SWITCH ATHLETE ─── -->
+<div class="phones-grid hidden" id="flow-switch">
+
+  <div class="phone-wrap">
+    <div class="phone-label">Parent's Phone</div>
+    <div class="phone-step">Step 1 — Tap avatar (KJ)</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="top-bar">
+          <div><div class="logo">GAINSZN</div><div class="tagline">Football · Dance</div></div>
+          <div class="top-bar-right">
+            <div class="avatar-btn" style="box-shadow:0 0 0 2px #fff">KJ</div>
+            <button class="parent-btn">PARENT</button>
+          </div>
+        </div>
+        <div class="ring-wrap">
+          <svg width="160" height="160" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="67" fill="none" stroke="#222" stroke-width="11"/>
+            <circle cx="80" cy="80" r="67" fill="none" stroke="#cc0000" stroke-width="11" stroke-linecap="round" stroke-dasharray="421" stroke-dashoffset="250" transform="rotate(-90 80 80)"/>
+            <text x="80" y="74" text-anchor="middle" font-family="Bebas Neue" font-size="30" fill="#f5f5f5">2,100</text>
+            <text x="80" y="91" text-anchor="middle" font-family="Barlow Condensed" font-size="10" fill="#666" font-weight="700" letter-spacing="1">CAL TODAY</text>
+            <text x="80" y="106" text-anchor="middle" font-family="Barlow Condensed" font-size="9" fill="#666">/ 3,500 goal</text>
+          </svg>
+        </div>
+        <div class="quick-stats">
+          <div class="stat-card"><div class="stat-val">3</div><div class="stat-label">Meals Logged</div></div>
+          <div class="stat-card"><div class="stat-val">148g</div><div class="stat-label">Protein</div></div>
+        </div>
+        <div style="height:60px"></div>
+        <div class="nav-bar">
+          <div class="nav-item active"><div class="nav-icon">⌂</div>HOME</div>
+          <div class="nav-item"><div class="nav-icon">📋</div>LOG</div>
+          <div class="nav-item"><div class="nav-icon">📅</div>SCHEDULE</div>
+          <div class="nav-item"><div class="nav-icon">🍗</div>FOOD</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone-label">Parent's Phone</div>
+    <div class="phone-step">Step 2 — Profile Sheet Opens</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen" style="position:relative">
+        <div class="top-bar">
+          <div><div class="logo">GAINSZN</div><div class="tagline">Football · Dance</div></div>
+          <div class="top-bar-right">
+            <div class="avatar-btn">KJ</div>
+            <button class="parent-btn">PARENT</button>
+          </div>
+        </div>
+        <!-- sheet overlay -->
+        <div class="overlay-sheet" style="top:0">
+          <div class="sheet-inner">
+            <div class="sheet-title">Switch Athlete</div>
+            <div class="ps-row active-p">
+              <div class="ps-av">KJ</div>
+              <div><div class="ps-nm">KJ</div><div class="ps-sp">Football · Dance</div></div>
+            </div>
+            <div class="ps-row">
+              <div class="ps-av" style="background:#3a3a3a">MA</div>
+              <div><div class="ps-nm">Marcus</div><div class="ps-sp">Basketball</div></div>
+            </div>
+            <button class="ps-add">
+              <div class="ps-add-av">+</div>
+              <span>Add Athlete</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone-label">Parent's Phone</div>
+    <div class="phone-step">Step 3 — Switched to Marcus</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="top-bar">
+          <div><div class="logo">GAINSZN</div><div class="tagline">Basketball</div></div>
+          <div class="top-bar-right">
+            <div class="avatar-btn" style="background:#555">MA</div>
+            <button class="parent-btn">PARENT</button>
+          </div>
+        </div>
+        <div class="ring-wrap">
+          <svg width="160" height="160" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="67" fill="none" stroke="#222" stroke-width="11"/>
+            <circle cx="80" cy="80" r="67" fill="none" stroke="#cc0000" stroke-width="11" stroke-linecap="round" stroke-dasharray="421" stroke-dashoffset="380" transform="rotate(-90 80 80)"/>
+            <text x="80" y="74" text-anchor="middle" font-family="Bebas Neue" font-size="30" fill="#f5f5f5">700</text>
+            <text x="80" y="91" text-anchor="middle" font-family="Barlow Condensed" font-size="10" fill="#666" font-weight="700" letter-spacing="1">CAL TODAY</text>
+            <text x="80" y="106" text-anchor="middle" font-family="Barlow Condensed" font-size="9" fill="#666">/ 3,000 goal</text>
+          </svg>
+          <div class="ring-motivational">FEED THE WOLF.</div>
+        </div>
+        <div class="quick-stats">
+          <div class="stat-card"><div class="stat-val">1</div><div class="stat-label">Meals Logged</div></div>
+          <div class="stat-card"><div class="stat-val">42g</div><div class="stat-label">Protein</div></div>
+        </div>
+        <div style="height:60px"></div>
+        <div class="nav-bar">
+          <div class="nav-item active"><div class="nav-icon">⌂</div>HOME</div>
+          <div class="nav-item"><div class="nav-icon">📋</div>LOG</div>
+          <div class="nav-item"><div class="nav-icon">📅</div>SCHEDULE</div>
+          <div class="nav-item"><div class="nav-icon">🍗</div>FOOD</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── ADD NEW ATHLETE ─── -->
+<div class="phones-grid hidden" id="flow-add">
+
+  <div class="phone-wrap">
+    <div class="phone-label">Parent's Phone</div>
+    <div class="phone-step">Step 1 — Tap "+ Add Athlete"</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen" style="position:relative">
+        <div class="top-bar">
+          <div><div class="logo">GAINSZN</div><div class="tagline">Football · Dance</div></div>
+          <div class="top-bar-right"><div class="avatar-btn">KJ</div><button class="parent-btn">PARENT</button></div>
+        </div>
+        <div class="overlay-sheet" style="top:0">
+          <div class="sheet-inner">
+            <div class="sheet-title">Switch Athlete</div>
+            <div class="ps-row active-p">
+              <div class="ps-av">KJ</div>
+              <div><div class="ps-nm">KJ</div><div class="ps-sp">Football · Dance</div></div>
+            </div>
+            <button class="ps-add" style="border-color:var(--red);color:var(--white)">
+              <div class="ps-add-av" style="background:var(--red);color:#fff">+</div>
+              <span style="color:var(--white)">Add Athlete</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone-label">Parent's Phone</div>
+    <div class="phone-step">Step 2 — Fill In New Athlete</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="ob-screen">
+          <div class="ob-logo">GAINSZN</div>
+          <div class="ob-tag">Bulk Season Tracker</div>
+          <div class="ob-head">SET UP YOUR ATHLETE</div>
+          <div class="ob-sub">Takes 30 seconds.</div>
+          <div class="form-grp">
+            <label>Athlete Name</label>
+            <input class="filled" value="Marcus" readonly />
+          </div>
+          <div class="form-grp">
+            <label>Sport / Activity</label>
+            <input class="filled" value="Basketball" readonly />
+          </div>
+          <div class="form-grp">
+            <label>Daily Calorie Goal</label>
+            <input class="filled" value="3000" readonly />
+          </div>
+          <div class="form-grp">
+            <label>Current Weight (lbs)</label>
+            <input class="filled" value="155" readonly />
+          </div>
+          <div class="form-grp">
+            <label>Goal Weight (lbs)</label>
+            <input class="filled" value="175" readonly />
+          </div>
+          <div class="form-grp">
+            <label>Parent PIN (4 digits)</label>
+            <input class="filled" value="••••" readonly />
+          </div>
+          <button class="btn-primary">LET'S EAT</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone-label">Parent's Phone</div>
+    <div class="phone-step">Step 3 — Profile Created, Switch Available</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen" style="position:relative">
+        <div class="top-bar">
+          <div><div class="logo">GAINSZN</div><div class="tagline">Basketball</div></div>
+          <div class="top-bar-right">
+            <div class="avatar-btn" style="background:#555">MA</div>
+            <button class="parent-btn">PARENT</button>
+          </div>
+        </div>
+        <div class="overlay-sheet" style="top:0">
+          <div class="sheet-inner">
+            <div class="sheet-title">Switch Athlete</div>
+            <div class="ps-row">
+              <div class="ps-av">KJ</div>
+              <div><div class="ps-nm">KJ</div><div class="ps-sp">Football · Dance</div></div>
+            </div>
+            <div class="ps-row active-p">
+              <div class="ps-av" style="background:#555">MA</div>
+              <div><div class="ps-nm">Marcus</div><div class="ps-sp">Basketball</div></div>
+            </div>
+            <button class="ps-add">
+              <div class="ps-add-av">+</div>
+              <span>Add Athlete</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── PARENT DASHBOARD ─── -->
+<div class="phones-grid hidden" id="flow-parent">
+
+  <div class="phone-wrap">
+    <div class="phone-label">Parent's Phone</div>
+    <div class="phone-step">Step 1 — Tap "PARENT"</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="top-bar">
+          <div><div class="logo">GAINSZN</div><div class="tagline">Football · Dance</div></div>
+          <div class="top-bar-right">
+            <div class="avatar-btn">KJ</div>
+            <button class="parent-btn" style="border-color:var(--red);color:var(--red)">PARENT</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone-label">Parent's Phone</div>
+    <div class="phone-step">Step 2 — Enter PIN</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="parent-header">
+          <h2>PARENT DASHBOARD</h2>
+          <button class="close-x">✕</button>
+        </div>
+        <div class="pin-screen">
+          <div class="pin-title">ENTER PIN</div>
+          <div class="pin-sub">Parent access only</div>
+          <div class="pin-dots">
+            <div class="pin-dot filled"></div>
+            <div class="pin-dot filled"></div>
+            <div class="pin-dot filled"></div>
+            <div class="pin-dot filled"></div>
+          </div>
+          <div class="pin-pad">
+            <div class="pin-key">1</div><div class="pin-key">2</div><div class="pin-key">3</div>
+            <div class="pin-key">4</div><div class="pin-key">5</div><div class="pin-key">6</div>
+            <div class="pin-key">7</div><div class="pin-key">8</div><div class="pin-key">9</div>
+            <div class="pin-key"></div><div class="pin-key">0</div><div class="pin-key">⌫</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone-label">Parent's Phone</div>
+    <div class="phone-step">Step 3 — Dashboard</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="parent-header">
+          <h2>PARENT DASHBOARD</h2>
+          <button class="close-x">✕</button>
+        </div>
+        <div class="dash-cards">
+          <div class="dash-card"><div class="dc-label">Total Calories</div><div class="dc-val red">2,100</div><div class="dc-sub">60% of 3,500 goal</div></div>
+          <div class="dash-card"><div class="dc-label">Meals Logged</div><div class="dc-val">3</div><div class="dc-sub">of 6 windows</div></div>
+          <div class="dash-card"><div class="dc-label">Total Protein</div><div class="dc-val">148g</div><div class="dc-sub">target: 160g+</div></div>
+          <div class="dash-card"><div class="dc-label">Last Ate</div><div class="dc-val" style="font-size:18px">12:30 PM</div><div class="dc-sub">Chicken + Rice</div></div>
+        </div>
+        <button class="share-summary-btn">SHARE DAILY SUMMARY</button>
+        <button class="share-setup-btn">SHARE SETUP LINK</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── SHARE SETUP LINK ─── -->
+<div class="phones-grid hidden" id="flow-share">
+
+  <div class="phone-wrap">
+    <div class="phone-label">Parent's Phone</div>
+    <div class="phone-step">Step 1 — Tap "Share Setup Link"</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="parent-header">
+          <h2>PARENT DASHBOARD</h2>
+          <button class="close-x">✕</button>
+        </div>
+        <div class="dash-cards">
+          <div class="dash-card"><div class="dc-label">Total Calories</div><div class="dc-val red">2,100</div><div class="dc-sub">60% of 3,500 goal</div></div>
+          <div class="dash-card"><div class="dc-label">Meals Logged</div><div class="dc-val">3</div><div class="dc-sub">of 6 windows</div></div>
+          <div class="dash-card"><div class="dc-label">Total Protein</div><div class="dc-val">148g</div><div class="dc-sub">target: 160g+</div></div>
+          <div class="dash-card"><div class="dc-label">Last Ate</div><div class="dc-val" style="font-size:18px">12:30 PM</div><div class="dc-sub">Chicken + Rice</div></div>
+        </div>
+        <button class="share-summary-btn">SHARE DAILY SUMMARY</button>
+        <button class="share-setup-btn" style="border:1px solid var(--red);color:var(--red)">SHARE SETUP LINK ←</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone-label">Parent's Phone</div>
+    <div class="phone-step">Step 2 — QR Code + Copy Link</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen" style="position:relative">
+        <div class="parent-header">
+          <h2>PARENT DASHBOARD</h2>
+          <button class="close-x">✕</button>
+        </div>
+        <div class="share-modal-overlay">
+          <div class="share-modal">
+            <div class="sm-title">KJ'S SETUP</div>
+            <div class="sm-sub">Share with KJ to set up on their phone</div>
+            <div class="qr-box">
+              <div class="qr-placeholder">QR CODE</div>
+            </div>
+            <div class="link-box">gainszn.com/#setup=eyJuYW1lIjoiS0oiLCJzcG9ydCI6Ikdh...</div>
+            <button class="copy-btn">COPY LINK</button>
+            <button class="done-btn">Done</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone-label">Parent Sends to Athlete</div>
+    <div class="phone-step">Step 3 — Text or scan the QR</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen" style="background:#1a1a2e; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; gap:20px;">
+        <!-- Simulated iMessage -->
+        <div style="background:#1c1c1e;border-radius:16px;padding:16px;width:100%">
+          <div style="font-size:11px;color:#666;margin-bottom:8px;font-weight:700;letter-spacing:1px">MOM · iMessage</div>
+          <div style="background:#0b84fe;border-radius:12px 12px 2px 12px;padding:10px 14px;margin-bottom:8px;font-size:13px;max-width:80%">
+            KJ here's your app link 🐺<br/>
+            <span style="font-size:11px;opacity:0.8">gainszn.com/#setup=eyJ...</span>
+          </div>
+          <div style="font-size:10px;color:#555;text-align:right">Delivered</div>
+        </div>
+        <div style="color:#666;font-size:12px;font-weight:700;letter-spacing:1px">— OR —</div>
+        <div style="background:#fff;border-radius:12px;padding:12px;">
+          <div class="qr-placeholder" style="width:120px;height:120px"></div>
+        </div>
+        <div style="font-size:11px;color:#666;text-align:center">Parent holds up their phone.<br/>Athlete scans with camera.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── ATHLETE IMPORTS ─── -->
+<div class="phones-grid hidden" id="flow-import">
+
+  <div class="phone-wrap">
+    <div class="phone-label">KJ's Phone</div>
+    <div class="phone-step">Step 1 — Opens the link</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <div class="import-screen">
+          <div class="import-av">KJ</div>
+          <div class="import-head">KJ'S APP</div>
+          <div class="import-sub">Your parent set this up for you.<br/>One tap to go.</div>
+          <div class="import-details">
+            <div class="import-row"><span class="ir-label">Sport</span><span class="ir-val">Football · Dance</span></div>
+            <div class="import-row"><span class="ir-label">Daily Cal Goal</span><span class="ir-val">3,500 cal</span></div>
+            <div class="import-row"><span class="ir-label">Start Weight</span><span class="ir-val">140 lbs</span></div>
+            <div class="import-row"><span class="ir-label">Target Weight</span><span class="ir-val">160 lbs</span></div>
+          </div>
+          <button class="btn-primary">SET UP MY APP</button>
+          <button class="import-skip-btn">Start fresh instead</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phone-wrap">
+    <div class="phone-label">KJ's Phone</div>
+    <div class="phone-step">Step 2 — Tap "Set Up My App"</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-screen">
+        <!-- Toast -->
+        <div style="position:absolute;top:40px;left:50%;transform:translateX(-50%);background:var(--red);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;padding:10px 20px;border-radius:20px;z-index:99;white-space:nowrap">
+          Welcome, KJ. Time to eat.
+        </div>
+        <div class="top-bar">
+          <div><div class="logo">GAINSZN</div><div class="tagline">Football · Dance</div></div>
+          <div class="top-bar-right"><div class="avatar-btn">KJ</div><button class="parent-btn">PARENT</button></div>
+        </div>
+        <div class="ring-wrap">
+          <svg width="160" height="160" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="67" fill="none" stroke="#222" stroke-width="11"/>
+            <circle cx="80" cy="80" r="67" fill="none" stroke="#cc0000" stroke-width="11" stroke-linecap="round" stroke-dasharray="421" stroke-dashoffset="421" transform="rotate(-90 80 80)"/>
+            <text x="80" y="74" text-anchor="middle" font-family="Bebas Neue" font-size="30" fill="#f5f5f5">0</text>
+            <text x="80" y="91" text-anchor="middle" font-family="Barlow Condensed" font-size="10" fill="#666" font-weight="700" letter-spacing="1">CAL TODAY</text>
+            <text x="80" y="106" text-anchor="middle" font-family="Barlow Condensed" font-size="9" fill="#666">/ 3,500 goal</text>
+          </svg>
+          <div class="ring-motivational">FEED THE WOLF.</div>
+        </div>
+        <div class="quick-stats">
+          <div class="stat-card"><div class="stat-val">0</div><div class="stat-label">Meals Logged</div></div>
+          <div class="stat-card"><div class="stat-val">0g</div><div class="stat-label">Protein</div></div>
+        </div>
+        <div style="height:60px"></div>
+        <div class="nav-bar">
+          <div class="nav-item active"><div class="nav-icon">⌂</div>HOME</div>
+          <div class="nav-item"><div class="nav-icon">📋</div>LOG</div>
+          <div class="nav-item"><div class="nav-icon">📅</div>SCHEDULE</div>
+          <div class="nav-item"><div class="nav-icon">🍗</div>FOOD</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Flow descriptions -->
+<div class="flow-desc" id="desc-home">
+  <h3>HOME SCREEN</h3>
+  <div class="flow-steps">
+    <div class="flow-step"><div class="step-num">1</div><span>Calorie ring shows today's progress toward that athlete's specific goal</span></div>
+    <div class="flow-step"><div class="step-num">2</div><span>Weight tracker card shows gain from start weight toward target</span></div>
+    <div class="flow-step"><div class="step-num">3</div><span>Profile avatar (initials) in top-right — tap to switch athletes</span></div>
+  </div>
+</div>
+
+<div class="flow-desc hidden" id="desc-switch">
+  <h3>SWITCHING ATHLETES</h3>
+  <div class="flow-steps">
+    <div class="flow-step"><div class="step-num">1</div><span>Tap the initials avatar in the top-right corner</span></div>
+    <div class="flow-step"><div class="step-arrow">→</div><span>A sheet slides up showing all athletes</span></div>
+    <div class="flow-step"><div class="step-num">2</div><span>Tap any athlete to switch — the whole app reloads with their data, goals, and weight targets</span></div>
+    <div class="flow-step"><div class="step-num">3</div><span>Each athlete has completely separate meal logs and weigh-ins — nothing overlaps</span></div>
+  </div>
+</div>
+
+<div class="flow-desc hidden" id="desc-add">
+  <h3>ADDING A NEW ATHLETE</h3>
+  <div class="flow-steps">
+    <div class="flow-step"><div class="step-num">1</div><span>Parent taps the avatar → profile sheet → "+ Add Athlete"</span></div>
+    <div class="flow-step"><div class="step-num">2</div><span>Fill in name, sport, calorie goal, start weight, target weight, PIN</span></div>
+    <div class="flow-step"><div class="step-num">3</div><span>Profile is created. App automatically switches to the new athlete.</span></div>
+    <div class="flow-step"><div class="step-num">4</div><span>Then go to Parent Dashboard → Share Setup Link to send it to that athlete's phone</span></div>
+  </div>
+</div>
+
+<div class="flow-desc hidden" id="desc-parent">
+  <h3>PARENT DASHBOARD</h3>
+  <div class="flow-steps">
+    <div class="flow-step"><div class="step-num">1</div><span>Tap "PARENT" in the top-right — enter your 4-digit PIN</span></div>
+    <div class="flow-step"><div class="step-num">2</div><span>See the active athlete's full day: calories, meals, protein, last ate</span></div>
+    <div class="flow-step"><div class="step-num">3</div><span>"Share Daily Summary" copies a text report to clipboard — paste into iMessage</span></div>
+    <div class="flow-step"><div class="step-num">4</div><span>"Share Setup Link" generates a QR + URL to send to the athlete's phone</span></div>
+  </div>
+</div>
+
+<div class="flow-desc hidden" id="desc-share">
+  <h3>SHARING THE SETUP LINK</h3>
+  <div class="flow-steps">
+    <div class="flow-step"><div class="step-num">1</div><span>Parent sets up the athlete's profile first (see "Add Athlete" flow)</span></div>
+    <div class="flow-step"><div class="step-num">2</div><span>Switch to that athlete → open Parent Dashboard → tap "Share Setup Link"</span></div>
+    <div class="flow-step"><div class="step-num">3</div><span>QR code appears — athlete scans it, or parent copies the link and texts it</span></div>
+    <div class="flow-step"><div class="step-num">4</div><span>The link contains the athlete's full config — no typing required on their end</span></div>
+  </div>
+</div>
+
+<div class="flow-desc hidden" id="desc-import">
+  <h3>ATHLETE IMPORTS THEIR PROFILE</h3>
+  <div class="flow-steps">
+    <div class="flow-step"><div class="step-num">1</div><span>Athlete opens the link (from text or QR scan)</span></div>
+    <div class="flow-step"><div class="step-num">2</div><span>They see a confirmation screen with their name, sport, and goals — no typing</span></div>
+    <div class="flow-step"><div class="step-num">3</div><span>One tap: "Set Up My App" — profile is created, app is ready to use</span></div>
+    <div class="flow-step"><div class="step-num">4</div><span>Their data stays on their device. Parents can't see it unless they have the PIN.</span></div>
+  </div>
+</div>
+
+<script>
+  const flows = ['home','switch','add','parent','share','import'];
+
+  function showFlow(name) {
+    flows.forEach(f => {
+      document.getElementById('flow-' + f).classList.toggle('hidden', f !== name);
+      document.getElementById('desc-' + f).classList.toggle('hidden', f !== name);
+    });
+    document.querySelectorAll('.flow-btn').forEach((btn, i) => {
+      btn.classList.toggle('active', flows[i] === name);
+    });
+  }
+</script>
+</body>
+</html>
