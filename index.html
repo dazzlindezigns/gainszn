@@ -1309,6 +1309,126 @@
       text-align: center;
       padding: 10px 0 4px;
     }
+
+    /* =============================================
+       PROFILE SYSTEM
+    ============================================= */
+    .profile-avatar-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--red);
+      color: var(--white);
+      font-size: 13px;
+      font-weight: 700;
+      font-family: var(--font-display);
+      letter-spacing: 1px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .top-bar-right { display: flex; gap: 8px; align-items: center; }
+
+    .profile-sheet {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .profile-sheet.show { display: flex; }
+
+    .profile-sheet-inner {
+      background: var(--black-card);
+      border: 1px solid var(--black-border);
+      border-radius: 16px 16px 0 0;
+      width: 100%;
+      max-width: 480px;
+      padding: 20px 20px 40px;
+    }
+
+    .ps-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--gray);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .ps-profile {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      margin-bottom: 8px;
+    }
+    .ps-profile.active-profile { border-color: var(--red); background: rgba(204,0,0,0.08); }
+
+    .ps-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--red);
+      color: var(--white);
+      font-size: 16px; font-weight: 700;
+      font-family: var(--font-display);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .ps-info .ps-name { font-size: 16px; font-weight: 700; letter-spacing: 1px; }
+    .ps-info .ps-sport { font-size: 11px; color: var(--gray); font-weight: 500; margin-top: 2px; }
+
+    .ps-add-btn {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px; border-radius: 10px;
+      border: 1px dashed var(--black-border);
+      background: none; color: var(--gray);
+      font-family: var(--font-ui); font-size: 14px; font-weight: 600;
+      cursor: pointer; width: 100%; margin-top: 4px;
+    }
+
+    .ps-add-icon {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--black-border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; color: var(--gray); flex-shrink: 0;
+    }
+
+    /* Onboarding */
+    .onboarding-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      background: var(--black);
+      display: none; flex-direction: column; overflow-y: auto;
+    }
+    .onboarding-overlay.show { display: flex; }
+
+    .onboarding-inner {
+      max-width: 480px; margin: 0 auto;
+      padding: 48px 24px 60px; width: 100%;
+    }
+
+    .ob-logo {
+      font-family: var(--font-display); font-size: 32px;
+      letter-spacing: 4px; color: var(--red); margin-bottom: 4px;
+    }
+
+    .ob-tagline {
+      font-size: 12px; font-weight: 600; letter-spacing: 2px;
+      color: var(--gray); text-transform: uppercase; margin-bottom: 36px;
+    }
+
+    .ob-heading { font-family: var(--font-display); font-size: 28px; letter-spacing: 2px; margin-bottom: 8px; }
+    .ob-sub { font-size: 13px; color: var(--gray); margin-bottom: 32px; }
   </style>
 </head>
 <body>
@@ -1318,9 +1438,12 @@
   <div class="top-bar">
     <div>
       <div class="logo">GAINSZN</div>
-      <div class="tagline">Weiss Wolves <span style="color:var(--red)">•</span> Bulk Phase</div>
+      <div class="tagline" id="top-tagline">Bulk Phase</div>
     </div>
-    <button class="parent-btn" onclick="openParent()">PARENT</button>
+    <div class="top-bar-right">
+      <button class="profile-avatar-btn" id="profile-avatar-btn" onclick="openProfileSheet()">?</button>
+      <button class="parent-btn" onclick="openParent()">PARENT</button>
+    </div>
   </div>
 
   <!-- VIEWS -->
@@ -1353,7 +1476,7 @@
             stroke-dasharray="527.8" stroke-dashoffset="527.8" />
           <text class="ring-center-text ring-calories" id="ring-calories" x="100" y="91">0</text>
           <text class="ring-center-text ring-label" x="100" y="113">cal today</text>
-          <text class="ring-center-text ring-goal" x="100" y="130">/ 3,500 goal</text>
+          <text class="ring-center-text ring-goal" id="ring-goal-text" x="100" y="130">/ 3,500 goal</text>
         </svg>
         <div class="ring-motivational" id="ring-motivational">GainSzn don't stop for nothing.</div>
       </div>
@@ -1405,9 +1528,9 @@
         <div class="weighin-progress">
           <div class="wp-bar-bg"><div class="wp-bar-fill" id="wi-bar" style="width:0%"></div></div>
           <div class="wp-labels">
-            <span>140 lbs</span>
+            <span id="wi-start-lbl">140 lbs</span>
             <span id="wi-pct">0%</span>
-            <span>160 lbs</span>
+            <span id="wi-goal-lbl">160 lbs</span>
           </div>
         </div>
         <div class="weighin-praise" id="wi-praise"></div>
@@ -1444,7 +1567,7 @@
     <div class="view" id="view-schedule">
       <div class="schedule-header">
         <h2>EAT SCHEDULE</h2>
-        <p>6 windows · 3,500 cal target · Stack every one.</p>
+        <p id="schedule-desc">6 windows · 3,500 cal target · Stack every one.</p>
       </div>
       <div class="meal-windows" id="meal-windows"></div>
     </div>
@@ -1579,6 +1702,54 @@
   </div>
 </div>
 
+<!-- ONBOARDING -->
+<div class="onboarding-overlay" id="onboarding-overlay">
+  <div class="onboarding-inner">
+    <div class="ob-logo">GAINSZN</div>
+    <div class="ob-tagline">Bulk Season Tracker</div>
+    <div class="ob-heading">SET UP YOUR ATHLETE</div>
+    <div class="ob-sub">Takes 30 seconds. You can add more athletes later.</div>
+
+    <div class="form-group">
+      <label>Athlete Name</label>
+      <input type="text" id="ob-name" placeholder="e.g. KJ" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label>Sport / Activity</label>
+      <input type="text" id="ob-sport" placeholder="e.g. Football · Dance" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label>Daily Calorie Goal</label>
+      <input type="number" id="ob-cals" placeholder="e.g. 3500" min="1000" max="10000" step="100" />
+    </div>
+    <div class="form-group">
+      <label>Current Weight (lbs)</label>
+      <input type="number" id="ob-start-w" placeholder="e.g. 140" min="50" max="400" step="0.5" />
+    </div>
+    <div class="form-group">
+      <label>Goal Weight (lbs)</label>
+      <input type="number" id="ob-goal-w" placeholder="e.g. 160" min="50" max="400" step="0.5" />
+    </div>
+    <div class="form-group">
+      <label>Parent PIN (4 digits)</label>
+      <input type="password" id="ob-pin" placeholder="e.g. 2010" maxlength="4" inputmode="numeric" />
+    </div>
+    <button class="btn-primary" onclick="submitOnboarding()" style="margin-top:8px">LET'S EAT</button>
+  </div>
+</div>
+
+<!-- PROFILE SHEET -->
+<div class="profile-sheet" id="profile-sheet" onclick="closeProfileSheet(event)">
+  <div class="profile-sheet-inner">
+    <div class="ps-title">Switch Athlete</div>
+    <div id="ps-list"></div>
+    <button class="ps-add-btn" onclick="startAddProfile()">
+      <div class="ps-add-icon">+</div>
+      <span>Add Athlete</span>
+    </button>
+  </div>
+</div>
+
 <!-- WEIGH-IN MODAL -->
 <div class="modal-overlay" id="weighin-modal" onclick="closeWeighInModal(event)">
   <div class="modal">
@@ -1604,8 +1775,154 @@
 /* =============================================
    DATA
 ============================================= */
-const DAILY_GOAL = 3500;
-const PARENT_PIN = '2010';
+let DAILY_GOAL = 3500;
+let PARENT_PIN = '2010';
+
+/* =============================================
+   PROFILES
+============================================= */
+const PROFILES_KEY  = 'gainszn_profiles';
+const ACTIVE_KEY    = 'gainszn_active';
+
+function loadProfiles() {
+  try { return JSON.parse(localStorage.getItem(PROFILES_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveProfiles(p) {
+  localStorage.setItem(PROFILES_KEY, JSON.stringify(p));
+}
+
+function getActiveProfile() {
+  const profiles = loadProfiles();
+  if (!profiles.length) return null;
+  const id = localStorage.getItem(ACTIVE_KEY);
+  return profiles.find(p => p.id === id) || profiles[0];
+}
+
+function profileKey(suffix) {
+  const p = getActiveProfile();
+  return p ? `${p.id}_${suffix}` : suffix;
+}
+
+function getInitials(name) {
+  return name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function applyProfile(p) {
+  DAILY_GOAL   = p.calorieGoal;
+  PARENT_PIN   = p.pin;
+  WEIGHT_START = p.startWeight;
+  WEIGHT_GOAL  = p.targetWeight;
+  WEIGHIN_KEY  = profileKey('weighins');
+  todayKey     = getTodayKey();
+  mealLog      = loadLog();
+
+  const avatar = document.getElementById('profile-avatar-btn');
+  if (avatar) avatar.textContent = getInitials(p.name);
+
+  const tagline = document.getElementById('top-tagline');
+  if (tagline) tagline.textContent = p.sport || 'Bulk Phase';
+
+  const ringGoal = document.getElementById('ring-goal-text');
+  if (ringGoal) ringGoal.textContent = `/ ${DAILY_GOAL.toLocaleString()} goal`;
+
+  const schedDesc = document.getElementById('schedule-desc');
+  if (schedDesc) schedDesc.textContent = `6 windows · ${DAILY_GOAL.toLocaleString()} cal target · Stack every one.`;
+
+  const wiStart = document.getElementById('wi-start-lbl');
+  if (wiStart) wiStart.textContent = `${WEIGHT_START} lbs`;
+
+  const wiGoal = document.getElementById('wi-goal-lbl');
+  if (wiGoal) wiGoal.textContent = `${WEIGHT_GOAL} lbs`;
+}
+
+function migrateOldData(profileId) {
+  const oldWeighins = localStorage.getItem('gainszn_weighins');
+  if (oldWeighins) {
+    localStorage.setItem(`${profileId}_weighins`, oldWeighins);
+    localStorage.removeItem('gainszn_weighins');
+  }
+  Object.keys(localStorage).filter(k => /^log_\d/.test(k)).forEach(k => {
+    localStorage.setItem(`${profileId}_${k}`, localStorage.getItem(k));
+    localStorage.removeItem(k);
+  });
+}
+
+function openProfileSheet() {
+  const profiles = loadProfiles();
+  const active = getActiveProfile();
+  const list = document.getElementById('ps-list');
+  list.innerHTML = profiles.map(p => `
+    <div class="ps-profile ${p.id === active?.id ? 'active-profile' : ''}" onclick="switchProfile('${p.id}')">
+      <div class="ps-avatar">${getInitials(p.name)}</div>
+      <div class="ps-info">
+        <div class="ps-name">${esc(p.name)}</div>
+        <div class="ps-sport">${esc(p.sport || '')}</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('profile-sheet').classList.add('show');
+}
+
+function closeProfileSheet(e) {
+  if (e && e.target !== document.getElementById('profile-sheet')) return;
+  document.getElementById('profile-sheet').classList.remove('show');
+}
+
+function switchProfile(id) {
+  localStorage.setItem(ACTIVE_KEY, id);
+  document.getElementById('profile-sheet').classList.remove('show');
+  const p = getActiveProfile();
+  applyProfile(p);
+  updateHome();
+  renderLog();
+  renderSchedule();
+  renderWeighIn();
+}
+
+function startAddProfile() {
+  document.getElementById('profile-sheet').classList.remove('show');
+  // Clear onboarding fields and show for adding
+  ['ob-name','ob-sport','ob-cals','ob-start-w','ob-goal-w','ob-pin'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('onboarding-overlay').classList.add('show');
+}
+
+function submitOnboarding() {
+  const name     = document.getElementById('ob-name').value.trim();
+  const sport    = document.getElementById('ob-sport').value.trim();
+  const cals     = parseInt(document.getElementById('ob-cals').value);
+  const startW   = parseFloat(document.getElementById('ob-start-w').value);
+  const goalW    = parseFloat(document.getElementById('ob-goal-w').value);
+  const pin      = document.getElementById('ob-pin').value.trim();
+
+  if (!name)              { showToast('Enter athlete name.'); return; }
+  if (!sport)             { showToast('Enter sport or activity.'); return; }
+  if (!cals || cals < 500){ showToast('Enter a valid calorie goal.'); return; }
+  if (!startW || startW < 50) { showToast('Enter current weight.'); return; }
+  if (!goalW || goalW < 50)   { showToast('Enter goal weight.'); return; }
+  if (pin.length !== 4 || !/^\d{4}$/.test(pin)) { showToast('PIN must be exactly 4 digits.'); return; }
+
+  const profiles = loadProfiles();
+  const id = 'p_' + Date.now();
+  const profile = { id, name, sport, calorieGoal: cals, startWeight: startW, targetWeight: goalW, pin };
+
+  // First profile ever — migrate KJ's old data
+  if (profiles.length === 0) migrateOldData(id);
+
+  profiles.push(profile);
+  saveProfiles(profiles);
+  localStorage.setItem(ACTIVE_KEY, id);
+
+  document.getElementById('onboarding-overlay').classList.remove('show');
+  applyProfile(profile);
+  updateHome();
+  renderLog();
+  renderSchedule();
+  renderWeighIn();
+  showToast(`${name} is locked in. Let's eat.`);
+}
 
 const MEAL_WINDOWS = [
   { time: '7:00 AM',  hour: 7,  min: 0,  name: 'Breakfast',       target: 700,  emoji: '🍳', suggestions: ['Eggs + oatmeal', 'Protein shake', 'Banana', 'Greek yogurt'] },
@@ -1666,7 +1983,7 @@ let pinBuffer = '';
 
 function getTodayKey() {
   const d = new Date();
-  return `log_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
+  return profileKey(`log_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`);
 }
 
 function loadLog() {
@@ -2185,7 +2502,7 @@ function shareSummary() {
 
   const summary = `GainSzn Daily Report — ${d}
 
-KJ's Stats
+${(getActiveProfile()?.name || 'Athlete')}'s Stats
 ━━━━━━━━━━━━━━━━━━
 Total Calories: ${total.toLocaleString()} / ${DAILY_GOAL.toLocaleString()} (${pct}%)
 Total Protein: ${protein}g
@@ -2357,6 +2674,14 @@ function registerSW() {
 ============================================= */
 function init() {
   registerSW();
+
+  const profile = getActiveProfile();
+  if (!profile) {
+    document.getElementById('onboarding-overlay').classList.add('show');
+  } else {
+    applyProfile(profile);
+  }
+
   setGreeting();
   updateHome();
   renderLog();
@@ -2390,9 +2715,9 @@ function init() {
 /* =============================================
    WEIGH-IN
 ============================================= */
-const WEIGHT_START = 140;
-const WEIGHT_GOAL  = 160;
-const WEIGHIN_KEY  = 'gainszn_weighins';
+let WEIGHT_START = 140;
+let WEIGHT_GOAL  = 160;
+let WEIGHIN_KEY  = 'gainszn_weighins';
 
 function loadWeighIns() {
   try { return JSON.parse(localStorage.getItem(WEIGHIN_KEY)) || []; }
