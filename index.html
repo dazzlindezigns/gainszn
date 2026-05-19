@@ -3118,10 +3118,31 @@ window.addEventListener('appinstalled', () => {
 
 // Wire buttons via addEventListener — more reliable than onclick on fixed/transformed elements
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('install-btn').addEventListener('click', triggerInstall);
-  document.getElementById('install-btn').addEventListener('touchend', e => { e.preventDefault(); triggerInstall(); });
-  document.getElementById('install-dismiss').addEventListener('click', dismissInstall);
-  document.getElementById('install-dismiss').addEventListener('touchend', e => { e.preventDefault(); dismissInstall(); });
+  const installBtn    = document.getElementById('install-btn');
+  const dismissBtn    = document.getElementById('install-dismiss');
+
+  function onInstall(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    dismissInstall(); // always hide immediately
+    if (_deferredInstallPrompt) {
+      _deferredInstallPrompt.prompt();
+      _deferredInstallPrompt = null;
+    } else if (_isIOS) {
+      showIOSInstructions();
+    }
+  }
+
+  function onDismiss(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    dismissInstall();
+  }
+
+  installBtn.addEventListener('touchstart', onInstall, { passive: false });
+  installBtn.addEventListener('click', onInstall);
+  dismissBtn.addEventListener('touchstart', onDismiss, { passive: false });
+  dismissBtn.addEventListener('click', onDismiss);
 });
 
 function shouldShowInstallBanner() {
@@ -3177,7 +3198,9 @@ function _showBannerWhenReady() {
 }
 
 function hideBanner() {
-  document.getElementById('install-banner').classList.remove('show');
+  const b = document.getElementById('install-banner');
+  b.classList.remove('show');
+  b.style.display = 'none';
 }
 
 function dismissInstall() {
