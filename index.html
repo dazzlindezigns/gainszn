@@ -1961,6 +1961,15 @@
       <input type="password" id="ob-pin" placeholder="e.g. 2010" maxlength="4" inputmode="numeric" />
     </div>
     <button class="btn-primary" onclick="submitOnboarding()" style="margin-top:8px">LET'S EAT</button>
+
+    <div style="margin-top:28px;padding-top:24px;border-top:1px solid var(--black-border)">
+      <div style="font-size:11px;font-weight:700;letter-spacing:2px;color:var(--gray);text-transform:uppercase;margin-bottom:12px">Already set up on another device?</div>
+      <div class="form-group" style="margin-bottom:10px">
+        <label>Paste your setup link</label>
+        <input type="url" id="ob-restore-link" placeholder="gainszn.com/#setup=..." autocomplete="off" autocapitalize="none" />
+      </div>
+      <button class="btn-secondary" onclick="restoreFromLink()" style="width:100%">RESTORE PROFILE</button>
+    </div>
   </div>
 </div>
 
@@ -3284,6 +3293,48 @@ function confirmImport() {
   renderWeighIn();
   showToast(`Welcome, ${d.name}. Time to eat.`);
   _pendingImport = null;
+}
+
+function restoreFromLink() {
+  const raw = document.getElementById('ob-restore-link').value.trim();
+  if (!raw) { showToast('Paste your setup link first.'); return; }
+
+  // Extract the hash portion wherever it appears in the pasted text
+  const match = raw.match(/#setup=([A-Za-z0-9+/=]+)/);
+  if (!match) { showToast('That doesn\'t look like a valid setup link.'); return; }
+
+  try {
+    const data = JSON.parse(decodeURIComponent(escape(atob(match[1]))));
+    if (!data.name || !data.calorieGoal) throw new Error();
+
+    const profiles = loadProfiles();
+    const id = 'p_' + Date.now();
+    const profile = {
+      id,
+      name:         data.name,
+      sport:        data.sport || '',
+      calorieGoal:  data.calorieGoal,
+      startWeight:  data.startWeight,
+      targetWeight: data.targetWeight,
+      pin:          data.pin,
+    };
+
+    if (profiles.length === 0) migrateOldData(id);
+    profiles.push(profile);
+    saveProfiles(profiles);
+    localStorage.setItem(ACTIVE_KEY, id);
+
+    document.getElementById('onboarding-overlay').classList.remove('show');
+    applyProfile(profile);
+    updateHome();
+    renderLog();
+    renderSchedule();
+    renderWeighIn();
+    showToast(`Back in. Welcome back, ${data.name}'s family.`);
+    showInstallBanner();
+  } catch {
+    showToast('Couldn\'t read that link. Make sure you copied the whole thing.');
+  }
 }
 
 function skipImport() {
