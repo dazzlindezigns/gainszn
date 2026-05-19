@@ -3191,10 +3191,16 @@ function openShareSetup() {
   document.getElementById('sm-sub-text').textContent =
     `Share with ${profile.name} to set up on their phone`;
 
-  const canvas = document.getElementById('setup-qr-canvas');
-  QRCode.toCanvas(canvas, url, { width: 220, margin: 0, color: { dark: '#000', light: '#fff' } });
-
+  // Show modal immediately — don't let QR generation block it
   document.getElementById('share-setup-overlay').classList.add('show');
+
+  const canvas = document.getElementById('setup-qr-canvas');
+  if (typeof QRCode !== 'undefined' && QRCode.toCanvas) {
+    QRCode.toCanvas(canvas, url, { width: 220, margin: 0, color: { dark: '#000', light: '#fff' } })
+      .catch(() => { canvas.style.display = 'none'; });
+  } else {
+    canvas.style.display = 'none';
+  }
 }
 
 function closeShareSetup(e) {
