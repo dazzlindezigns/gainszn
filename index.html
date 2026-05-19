@@ -1625,10 +1625,17 @@
       background: none;
       border: none;
       color: var(--gray);
-      font-size: 18px;
+      font-size: 20px;
       cursor: pointer;
-      padding: 4px;
-      line-height: 1;
+      padding: 0;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border-radius: 50%;
+      -webkit-tap-highlight-color: rgba(255,255,255,0.1);
     }
   </style>
 </head>
@@ -2011,8 +2018,8 @@
     <div class="install-banner-sub" id="install-banner-sub">Install GainSzn for quick access</div>
   </div>
   <div class="install-banner-actions">
-    <button class="install-btn" id="install-btn" onclick="triggerInstall()">Install</button>
-    <button class="install-dismiss" onclick="dismissInstall()" aria-label="Dismiss">×</button>
+    <button class="install-btn" id="install-btn">Install</button>
+    <button class="install-dismiss" id="install-dismiss" aria-label="Dismiss">×</button>
   </div>
 </div>
 
@@ -3099,16 +3106,22 @@ const _isInStandalone = window.navigator.standalone === true ||
 const _isAndroidChrome = /Android/.test(navigator.userAgent) &&
                          /Chrome\//.test(navigator.userAgent);
 
-// Capture the prompt before the browser uses it
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   _deferredInstallPrompt = e;
 });
 
-// If the user installs via the native prompt, hide the banner
 window.addEventListener('appinstalled', () => {
   hideBanner();
   localStorage.setItem(INSTALL_DISMISSED_KEY, '1');
+});
+
+// Wire buttons via addEventListener — more reliable than onclick on fixed/transformed elements
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('install-btn').addEventListener('click', triggerInstall);
+  document.getElementById('install-btn').addEventListener('touchend', e => { e.preventDefault(); triggerInstall(); });
+  document.getElementById('install-dismiss').addEventListener('click', dismissInstall);
+  document.getElementById('install-dismiss').addEventListener('touchend', e => { e.preventDefault(); dismissInstall(); });
 });
 
 function shouldShowInstallBanner() {
@@ -3120,34 +3133,47 @@ function shouldShowInstallBanner() {
 function showInstallBanner() {
   if (!shouldShowInstallBanner()) return;
 
-  const banner  = document.getElementById('install-banner');
-  const title   = document.getElementById('install-banner-title');
-  const sub     = document.getElementById('install-banner-sub');
-  const btn     = document.getElementById('install-btn');
+  // Check if already installed via getInstalledRelatedApps (Chrome 84+)
+  if (navigator.getInstalledRelatedApps) {
+    navigator.getInstalledRelatedApps().then(apps => {
+      if (apps.length > 0) {
+        localStorage.setItem(INSTALL_DISMISSED_KEY, '1');
+      } else {
+        _showBannerWhenReady();
+      }
+    }).catch(() => _showBannerWhenReady());
+    return;
+  }
+
+  _showBannerWhenReady();
+}
+
+function _showBannerWhenReady() {
+  const banner = document.getElementById('install-banner');
+  const title  = document.getElementById('install-banner-title');
+  const sub    = document.getElementById('install-banner-sub');
+  const btn    = document.getElementById('install-btn');
 
   if (_isIOS) {
     title.textContent = 'Add to Home Screen';
-    // Use the real iOS share icon as inline SVG
     sub.innerHTML = `Tap the <svg class="share-icon" viewBox="0 0 20 20" fill="none" stroke="#0a84ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13V3M6 7l4-4 4 4"/><path d="M3 14v3h14v-3"/></svg> then <strong>"Add to Home Screen"</strong>`;
     btn.textContent = 'How?';
-    btn.onclick = showIOSInstructions;
+    setTimeout(() => banner.classList.add('show'), 2500);
   } else {
     title.textContent = 'Install GainSzn';
-    sub.textContent   = 'Add to home screen for quick access — no App Store needed.';
+    sub.textContent   = 'Add to home screen — no App Store needed.';
     btn.textContent   = 'Install';
-    btn.onclick       = triggerInstall;
-    // Only show if the browser has the prompt ready; otherwise wait
-    if (!_deferredInstallPrompt) {
-      // Show after a delay in case prompt fires late
+    // Only show if the install prompt is available (not already installed)
+    if (_deferredInstallPrompt) {
+      setTimeout(() => banner.classList.add('show'), 2500);
+    } else {
+      // Wait up to 4s for the prompt — if it never comes, app is likely installed
       setTimeout(() => {
         if (_deferredInstallPrompt) banner.classList.add('show');
-      }, 3000);
-      return;
+        // else: already installed, don't show
+      }, 4000);
     }
   }
-
-  // Small delay so it doesn't pop up the instant the page loads
-  setTimeout(() => banner.classList.add('show'), 2500);
 }
 
 function hideBanner() {
@@ -3160,13 +3186,14 @@ function dismissInstall() {
 }
 
 function triggerInstall() {
-  if (!_deferredInstallPrompt) return;
+  if (_isIOS) { showIOSInstructions(); return; }
+  if (!_deferredInstallPrompt) { dismissInstall(); return; }
   _deferredInstallPrompt.prompt();
   _deferredInstallPrompt.userChoice.then(result => {
     if (result.outcome === 'accepted') {
-      hideBanner();
       localStorage.setItem(INSTALL_DISMISSED_KEY, '1');
     }
+    hideBanner();
     _deferredInstallPrompt = null;
   });
 }
