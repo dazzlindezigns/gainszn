@@ -1530,6 +1530,106 @@
       font-family: var(--font-ui);
       text-decoration: underline;
     }
+
+    /* =============================================
+       INSTALL BANNER
+    ============================================= */
+    .install-banner {
+      position: fixed;
+      bottom: 70px; /* above nav bar */
+      left: 12px;
+      right: 12px;
+      z-index: 150;
+      background: var(--black-card);
+      border: 1px solid var(--black-border);
+      border-radius: 14px;
+      padding: 14px 14px 14px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      transform: translateY(120%);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      max-width: 460px;
+      margin: 0 auto;
+    }
+
+    .install-banner.show {
+      transform: translateY(0);
+    }
+
+    .install-banner-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--red);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 14px;
+      letter-spacing: 1px;
+      color: var(--white);
+      flex-shrink: 0;
+    }
+
+    .install-banner-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .install-banner-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .install-banner-sub {
+      font-size: 11px;
+      color: var(--gray);
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+
+    .install-banner-sub .share-icon {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      vertical-align: middle;
+      margin: 0 2px;
+    }
+
+    .install-banner-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .install-btn {
+      background: var(--red);
+      border: none;
+      border-radius: 8px;
+      color: var(--white);
+      font-family: var(--font-ui);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 8px 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .install-dismiss {
+      background: none;
+      border: none;
+      color: var(--gray);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+    }
   </style>
 </head>
 <body>
@@ -1894,6 +1994,19 @@
   </div>
 </div>
 
+<!-- INSTALL BANNER -->
+<div class="install-banner" id="install-banner">
+  <div class="install-banner-icon">G</div>
+  <div class="install-banner-text">
+    <div class="install-banner-title" id="install-banner-title">Add to Home Screen</div>
+    <div class="install-banner-sub" id="install-banner-sub">Install GainSzn for quick access</div>
+  </div>
+  <div class="install-banner-actions">
+    <button class="install-btn" id="install-btn" onclick="triggerInstall()">Install</button>
+    <button class="install-dismiss" onclick="dismissInstall()" aria-label="Dismiss">×</button>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -2048,6 +2161,7 @@ function submitOnboarding() {
   renderSchedule();
   renderWeighIn();
   showToast(`${name} is locked in. Let's eat.`);
+  showInstallBanner();
 }
 
 const MEAL_WINDOWS = [
@@ -2817,6 +2931,7 @@ function init() {
   renderFood();
   renderWeighIn();
   checkNotifPermission();
+  showInstallBanner();
 
   // Rotate hype quote every 8 seconds
   setInterval(rotateGreeting, 8000);
@@ -2959,6 +3074,94 @@ function getWeightPraise(weight, gain, count) {
   if (gain < 18)   return `+${gain} lbs. Almost at goal. Lock in every meal.`;
   if (weight >= WEIGHT_GOAL) return `${weight} lbs. GOAL HIT. They'll notice in August. 🐺`;
   return `${weight} lbs. You already made history. Now make weight.`;
+}
+
+/* =============================================
+   PWA INSTALL
+============================================= */
+const INSTALL_DISMISSED_KEY = 'gainszn_install_dismissed';
+let _deferredInstallPrompt = null;
+
+const _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const _isInStandalone = window.navigator.standalone === true ||
+                        window.matchMedia('(display-mode: standalone)').matches;
+const _isAndroidChrome = /Android/.test(navigator.userAgent) &&
+                         /Chrome\//.test(navigator.userAgent);
+
+// Capture the prompt before the browser uses it
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredInstallPrompt = e;
+});
+
+// If the user installs via the native prompt, hide the banner
+window.addEventListener('appinstalled', () => {
+  hideBanner();
+  localStorage.setItem(INSTALL_DISMISSED_KEY, '1');
+});
+
+function shouldShowInstallBanner() {
+  if (_isInStandalone) return false;
+  if (localStorage.getItem(INSTALL_DISMISSED_KEY)) return false;
+  return _isIOS || _isAndroidChrome;
+}
+
+function showInstallBanner() {
+  if (!shouldShowInstallBanner()) return;
+
+  const banner  = document.getElementById('install-banner');
+  const title   = document.getElementById('install-banner-title');
+  const sub     = document.getElementById('install-banner-sub');
+  const btn     = document.getElementById('install-btn');
+
+  if (_isIOS) {
+    title.textContent = 'Add to Home Screen';
+    // Use the real iOS share icon as inline SVG
+    sub.innerHTML = `Tap the <svg class="share-icon" viewBox="0 0 20 20" fill="none" stroke="#0a84ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13V3M6 7l4-4 4 4"/><path d="M3 14v3h14v-3"/></svg> then <strong>"Add to Home Screen"</strong>`;
+    btn.textContent = 'How?';
+    btn.onclick = showIOSInstructions;
+  } else {
+    title.textContent = 'Install GainSzn';
+    sub.textContent   = 'Add to home screen for quick access — no App Store needed.';
+    btn.textContent   = 'Install';
+    btn.onclick       = triggerInstall;
+    // Only show if the browser has the prompt ready; otherwise wait
+    if (!_deferredInstallPrompt) {
+      // Show after a delay in case prompt fires late
+      setTimeout(() => {
+        if (_deferredInstallPrompt) banner.classList.add('show');
+      }, 3000);
+      return;
+    }
+  }
+
+  // Small delay so it doesn't pop up the instant the page loads
+  setTimeout(() => banner.classList.add('show'), 2500);
+}
+
+function hideBanner() {
+  document.getElementById('install-banner').classList.remove('show');
+}
+
+function dismissInstall() {
+  hideBanner();
+  localStorage.setItem(INSTALL_DISMISSED_KEY, '1');
+}
+
+function triggerInstall() {
+  if (!_deferredInstallPrompt) return;
+  _deferredInstallPrompt.prompt();
+  _deferredInstallPrompt.userChoice.then(result => {
+    if (result.outcome === 'accepted') {
+      hideBanner();
+      localStorage.setItem(INSTALL_DISMISSED_KEY, '1');
+    }
+    _deferredInstallPrompt = null;
+  });
+}
+
+function showIOSInstructions() {
+  showToast('Tap the Share icon ↑ at the bottom of Safari, then "Add to Home Screen"', 5000);
 }
 
 /* =============================================
