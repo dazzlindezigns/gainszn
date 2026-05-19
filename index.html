@@ -1536,10 +1536,10 @@
     ============================================= */
     .install-banner {
       position: fixed;
-      bottom: 70px; /* above nav bar */
+      bottom: 70px;
       left: 12px;
       right: 12px;
-      z-index: 150;
+      z-index: 400;
       background: var(--black-card);
       border: 1px solid var(--black-border);
       border-radius: 14px;
@@ -3093,7 +3093,9 @@ let _deferredInstallPrompt = null;
 
 const _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 const _isInStandalone = window.navigator.standalone === true ||
-                        window.matchMedia('(display-mode: standalone)').matches;
+                        window.matchMedia('(display-mode: standalone)').matches ||
+                        window.matchMedia('(display-mode: fullscreen)').matches ||
+                        window.matchMedia('(display-mode: minimal-ui)').matches;
 const _isAndroidChrome = /Android/.test(navigator.userAgent) &&
                          /Chrome\//.test(navigator.userAgent);
 
