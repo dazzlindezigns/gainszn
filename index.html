@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
   <title>GainSzn</title>
   <style>
     /* =============================================
@@ -1429,6 +1430,106 @@
 
     .ob-heading { font-family: var(--font-display); font-size: 28px; letter-spacing: 2px; margin-bottom: 8px; }
     .ob-sub { font-size: 13px; color: var(--gray); margin-bottom: 32px; }
+
+    /* Share Modal */
+    .share-modal-overlay {
+      position: fixed; inset: 0; z-index: 250;
+      background: rgba(0,0,0,0.8);
+      display: none; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .share-modal-overlay.show { display: flex; }
+
+    .share-modal {
+      background: var(--black-card);
+      border: 1px solid var(--black-border);
+      border-radius: 16px;
+      padding: 28px 24px 24px;
+      width: 100%; max-width: 340px;
+      text-align: center;
+    }
+
+    .sm-title {
+      font-family: var(--font-display);
+      font-size: 22px; letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+
+    .sm-sub {
+      font-size: 12px; color: var(--gray);
+      margin-bottom: 20px; font-weight: 500;
+    }
+
+    .sm-qr {
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+
+    .sm-qr canvas { display: block; }
+
+    .sm-link {
+      font-size: 11px; color: var(--gray);
+      word-break: break-all;
+      margin-bottom: 16px;
+      padding: 8px 12px;
+      background: var(--black-border);
+      border-radius: 8px;
+      text-align: left;
+    }
+
+    /* Import Overlay */
+    .import-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      background: var(--black);
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 32px 24px;
+    }
+    .import-overlay.show { display: flex; }
+
+    .import-inner { max-width: 400px; width: 100%; text-align: center; }
+
+    .import-avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: var(--red); color: var(--white);
+      font-family: var(--font-display); font-size: 28px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+    }
+
+    .import-heading {
+      font-family: var(--font-display);
+      font-size: 28px; letter-spacing: 2px; margin-bottom: 8px;
+    }
+
+    .import-sub { font-size: 14px; color: var(--gray); margin-bottom: 28px; }
+
+    .import-details {
+      background: var(--black-card);
+      border: 1px solid var(--black-border);
+      border-radius: 12px;
+      padding: 16px; margin-bottom: 28px; text-align: left;
+    }
+
+    .import-row {
+      display: flex; justify-content: space-between;
+      padding: 6px 0; border-bottom: 1px solid var(--black-border);
+      font-size: 13px;
+    }
+    .import-row:last-child { border-bottom: none; }
+    .import-row .ir-label { color: var(--gray); font-weight: 500; }
+    .import-row .ir-val { font-weight: 700; }
+
+    .import-skip {
+      background: none; border: none;
+      color: var(--gray); font-size: 13px;
+      cursor: pointer; margin-top: 12px;
+      font-family: var(--font-ui);
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -1698,7 +1799,32 @@
     <div class="dash-summary-cards" id="dash-cards"></div>
     <div class="dash-log-title">TODAY'S FULL LOG</div>
     <div id="dash-log-entries"></div>
-    <button class="share-btn" onclick="shareSummary()">SHARE SUMMARY</button>
+    <button class="share-btn" onclick="shareSummary()">SHARE DAILY SUMMARY</button>
+    <button class="share-btn" onclick="openShareSetup()" style="margin-top:10px;background:var(--black-border);color:var(--white)">SHARE SETUP LINK</button>
+  </div>
+</div>
+
+<!-- SHARE SETUP MODAL -->
+<div class="share-modal-overlay" id="share-setup-overlay" onclick="closeShareSetup(event)">
+  <div class="share-modal">
+    <div class="sm-title">ATHLETE SETUP</div>
+    <div class="sm-sub" id="sm-sub-text">Scan or share this link to set up on a new device</div>
+    <div class="sm-qr"><canvas id="setup-qr-canvas"></canvas></div>
+    <div class="sm-link" id="sm-link-text"></div>
+    <button class="btn-primary" onclick="copySetupLink()">COPY LINK</button>
+    <button class="btn-secondary" style="margin-top:8px" onclick="closeShareSetup()">Done</button>
+  </div>
+</div>
+
+<!-- IMPORT OVERLAY -->
+<div class="import-overlay" id="import-overlay">
+  <div class="import-inner">
+    <div class="import-avatar" id="import-avatar">?</div>
+    <div class="import-heading" id="import-heading">PROFILE READY</div>
+    <div class="import-sub">Your parent set this up for you. One tap to go.</div>
+    <div class="import-details" id="import-details"></div>
+    <button class="btn-primary" id="import-btn" onclick="confirmImport()">SET UP MY APP</button>
+    <button class="import-skip" onclick="skipImport()">Start fresh instead</button>
   </div>
 </div>
 
@@ -2675,11 +2801,13 @@ function registerSW() {
 function init() {
   registerSW();
 
-  const profile = getActiveProfile();
-  if (!profile) {
-    document.getElementById('onboarding-overlay').classList.add('show');
-  } else {
-    applyProfile(profile);
+  if (!checkSetupLink()) {
+    const profile = getActiveProfile();
+    if (!profile) {
+      document.getElementById('onboarding-overlay').classList.add('show');
+    } else {
+      applyProfile(profile);
+    }
   }
 
   setGreeting();
@@ -2831,6 +2959,130 @@ function getWeightPraise(weight, gain, count) {
   if (gain < 18)   return `+${gain} lbs. Almost at goal. Lock in every meal.`;
   if (weight >= WEIGHT_GOAL) return `${weight} lbs. GOAL HIT. They'll notice in August. 🐺`;
   return `${weight} lbs. You already made history. Now make weight.`;
+}
+
+/* =============================================
+   SHARE SETUP LINK
+============================================= */
+let _pendingImport = null;
+
+function buildSetupURL(profile) {
+  const data = {
+    name:         profile.name,
+    sport:        profile.sport,
+    calorieGoal:  profile.calorieGoal,
+    startWeight:  profile.startWeight,
+    targetWeight: profile.targetWeight,
+    pin:          profile.pin,
+  };
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+  return `${location.origin}${location.pathname}#setup=${encoded}`;
+}
+
+function openShareSetup() {
+  const profile = getActiveProfile();
+  if (!profile) { showToast('No active profile to share.'); return; }
+
+  const url = buildSetupURL(profile);
+  document.getElementById('sm-link-text').textContent = url;
+  document.getElementById('sm-sub-text').textContent =
+    `Share with ${profile.name} to set up on their phone`;
+
+  const canvas = document.getElementById('setup-qr-canvas');
+  QRCode.toCanvas(canvas, url, { width: 220, margin: 0, color: { dark: '#000', light: '#fff' } });
+
+  document.getElementById('share-setup-overlay').classList.add('show');
+}
+
+function closeShareSetup(e) {
+  if (e && e.target !== document.getElementById('share-setup-overlay')) return;
+  document.getElementById('share-setup-overlay').classList.remove('show');
+}
+
+function copySetupLink() {
+  const url = document.getElementById('sm-link-text').textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => showToast('Setup link copied!'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Setup link copied!');
+  }
+}
+
+/* =============================================
+   IMPORT FROM SETUP LINK
+============================================= */
+function checkSetupLink() {
+  const hash = location.hash;
+  if (!hash.startsWith('#setup=')) return false;
+
+  try {
+    const encoded = hash.slice(7);
+    const data = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+    if (!data.name || !data.calorieGoal) return false;
+
+    _pendingImport = data;
+
+    document.getElementById('import-avatar').textContent  = getInitials(data.name);
+    document.getElementById('import-heading').textContent = `${data.name.toUpperCase()}'S APP`;
+    document.getElementById('import-details').innerHTML   = `
+      <div class="import-row"><span class="ir-label">Sport</span><span class="ir-val">${esc(data.sport || '—')}</span></div>
+      <div class="import-row"><span class="ir-label">Daily Cal Goal</span><span class="ir-val">${data.calorieGoal.toLocaleString()} cal</span></div>
+      <div class="import-row"><span class="ir-label">Start Weight</span><span class="ir-val">${data.startWeight} lbs</span></div>
+      <div class="import-row"><span class="ir-label">Target Weight</span><span class="ir-val">${data.targetWeight} lbs</span></div>
+    `;
+
+    document.getElementById('import-overlay').classList.add('show');
+    history.replaceState(null, '', location.pathname);
+    return true;
+  } catch {
+    history.replaceState(null, '', location.pathname);
+    return false;
+  }
+}
+
+function confirmImport() {
+  if (!_pendingImport) return;
+  const d = _pendingImport;
+
+  const profiles = loadProfiles();
+  const id = 'p_' + Date.now();
+  const profile = {
+    id,
+    name:         d.name,
+    sport:        d.sport || '',
+    calorieGoal:  d.calorieGoal,
+    startWeight:  d.startWeight,
+    targetWeight: d.targetWeight,
+    pin:          d.pin,
+  };
+
+  if (profiles.length === 0) migrateOldData(id);
+  profiles.push(profile);
+  saveProfiles(profiles);
+  localStorage.setItem(ACTIVE_KEY, id);
+
+  document.getElementById('import-overlay').classList.remove('show');
+  applyProfile(profile);
+  updateHome();
+  renderLog();
+  renderSchedule();
+  renderWeighIn();
+  showToast(`Welcome, ${d.name}. Time to eat.`);
+  _pendingImport = null;
+}
+
+function skipImport() {
+  _pendingImport = null;
+  document.getElementById('import-overlay').classList.remove('show');
+  if (!getActiveProfile()) {
+    document.getElementById('onboarding-overlay').classList.add('show');
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);
