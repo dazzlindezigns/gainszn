@@ -12,6 +12,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
   <title>GainSzn</title>
   <style>
     /* =============================================
@@ -1309,18 +1311,535 @@
       text-align: center;
       padding: 10px 0 4px;
     }
+
+    /* =============================================
+       PROFILE SYSTEM
+    ============================================= */
+    .profile-avatar-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--red);
+      color: var(--white);
+      font-size: 13px;
+      font-weight: 700;
+      font-family: var(--font-display);
+      letter-spacing: 1px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .top-bar-right { display: flex; gap: 8px; align-items: center; }
+
+    .profile-sheet {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .profile-sheet.show { display: flex; }
+
+    .profile-sheet-inner {
+      background: var(--black-card);
+      border: 1px solid var(--black-border);
+      border-radius: 16px 16px 0 0;
+      width: 100%;
+      max-width: 480px;
+      padding: 20px 20px 40px;
+    }
+
+    .ps-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--gray);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .ps-profile {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      margin-bottom: 8px;
+    }
+    .ps-profile.active-profile { border-color: var(--red); background: rgba(204,0,0,0.08); }
+
+    .ps-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--red);
+      color: var(--white);
+      font-size: 16px; font-weight: 700;
+      font-family: var(--font-display);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .ps-info .ps-name { font-size: 16px; font-weight: 700; letter-spacing: 1px; }
+    .ps-info .ps-sport { font-size: 11px; color: var(--gray); font-weight: 500; margin-top: 2px; }
+
+    .ps-add-btn {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px; border-radius: 10px;
+      border: 1px dashed var(--black-border);
+      background: none; color: var(--gray);
+      font-family: var(--font-ui); font-size: 14px; font-weight: 600;
+      cursor: pointer; width: 100%; margin-top: 4px;
+    }
+
+    .ps-add-icon {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--black-border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; color: var(--gray); flex-shrink: 0;
+    }
+
+    /* Onboarding */
+    .onboarding-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      background: var(--black);
+      display: none; flex-direction: column; overflow-y: auto;
+    }
+    .onboarding-overlay.show { display: flex; }
+
+    .onboarding-inner {
+      max-width: 480px; margin: 0 auto;
+      padding: 48px 24px 60px; width: 100%;
+    }
+
+    .ob-logo {
+      font-family: var(--font-display); font-size: 32px;
+      letter-spacing: 4px; color: var(--red); margin-bottom: 4px;
+    }
+
+    .ob-tagline {
+      font-size: 12px; font-weight: 600; letter-spacing: 2px;
+      color: var(--gray); text-transform: uppercase; margin-bottom: 36px;
+    }
+
+    .ob-heading { font-family: var(--font-display); font-size: 28px; letter-spacing: 2px; margin-bottom: 8px; }
+    .ob-sub { font-size: 13px; color: var(--gray); margin-bottom: 32px; }
+
+    /* Share Modal */
+    .share-modal-overlay {
+      position: fixed; inset: 0; z-index: 250;
+      background: rgba(0,0,0,0.8);
+      display: none; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .share-modal-overlay.show { display: flex; }
+
+    .share-modal {
+      background: var(--black-card);
+      border: 1px solid var(--black-border);
+      border-radius: 16px;
+      padding: 28px 24px 24px;
+      width: 100%; max-width: 340px;
+      text-align: center;
+    }
+
+    .sm-title {
+      font-family: var(--font-display);
+      font-size: 22px; letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+
+    .sm-sub {
+      font-size: 12px; color: var(--gray);
+      margin-bottom: 20px; font-weight: 500;
+    }
+
+    .sm-qr {
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+
+    .sm-qr canvas { display: block; }
+
+    .sm-link {
+      font-size: 11px; color: var(--gray);
+      word-break: break-all;
+      margin-bottom: 16px;
+      padding: 8px 12px;
+      background: var(--black-border);
+      border-radius: 8px;
+      text-align: left;
+    }
+
+    /* Import Overlay */
+    .import-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      background: var(--black);
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 32px 24px;
+    }
+    .import-overlay.show { display: flex; }
+
+    .import-inner { max-width: 400px; width: 100%; text-align: center; }
+
+    .import-avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: var(--red); color: var(--white);
+      font-family: var(--font-display); font-size: 28px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+    }
+
+    .import-heading {
+      font-family: var(--font-display);
+      font-size: 28px; letter-spacing: 2px; margin-bottom: 8px;
+    }
+
+    .import-sub { font-size: 14px; color: var(--gray); margin-bottom: 28px; }
+
+    .import-details {
+      background: var(--black-card);
+      border: 1px solid var(--black-border);
+      border-radius: 12px;
+      padding: 16px; margin-bottom: 28px; text-align: left;
+    }
+
+    .import-row {
+      display: flex; justify-content: space-between;
+      padding: 6px 0; border-bottom: 1px solid var(--black-border);
+      font-size: 13px;
+    }
+    .import-row:last-child { border-bottom: none; }
+    .import-row .ir-label { color: var(--gray); font-weight: 500; }
+    .import-row .ir-val { font-weight: 700; }
+
+    .import-skip {
+      background: none; border: none;
+      color: var(--gray); font-size: 13px;
+      cursor: pointer; margin-top: 12px;
+      font-family: var(--font-ui);
+      text-decoration: underline;
+    }
+
+    /* =============================================
+       INSTALL BANNER
+    ============================================= */
+    .install-banner {
+      position: fixed;
+      bottom: 70px;
+      left: 12px;
+      right: 12px;
+      z-index: 400;
+      background: var(--black-card);
+      border: 1px solid var(--black-border);
+      border-radius: 14px;
+      padding: 14px 14px 14px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      transform: translateY(120%);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      max-width: 460px;
+      margin: 0 auto;
+    }
+
+    .install-banner.show {
+      transform: translateY(0);
+    }
+
+    .install-banner-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--red);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 14px;
+      letter-spacing: 1px;
+      color: var(--white);
+      flex-shrink: 0;
+    }
+
+    .install-banner-text {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .install-banner-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .install-banner-sub {
+      font-size: 11px;
+      color: var(--gray);
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+
+    .install-banner-sub .share-icon {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      vertical-align: middle;
+      margin: 0 2px;
+    }
+
+    .install-banner-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .install-btn {
+      background: var(--red);
+      border: none;
+      border-radius: 8px;
+      color: var(--white);
+      font-family: var(--font-ui);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 8px 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .install-dismiss {
+      background: none;
+      border: none;
+      color: var(--gray);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border-radius: 50%;
+      -webkit-tap-highlight-color: rgba(255,255,255,0.1);
+    }
+
+    /* =============================================
+       AUTH SCREEN
+    ============================================= */
+    #auth-overlay {
+      position: fixed; inset: 0; z-index: 500;
+      background: var(--black);
+      flex-direction: column; align-items: center; justify-content: flex-start;
+      overflow-y: auto;
+      padding-top: var(--safe-top);
+    }
+    .auth-inner {
+      max-width: 480px; width: 100%;
+      padding: 48px 24px 80px; margin: 0 auto;
+    }
+    .auth-avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: var(--red); color: var(--white);
+      font-family: var(--font-display); font-size: 28px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+    }
+    .auth-error {
+      font-size: 13px; color: #ef4444; font-weight: 600;
+      letter-spacing: 1px; min-height: 20px; margin-top: 10px; text-align: center;
+    }
+    .auth-divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 20px 0; color: var(--gray); font-size: 11px;
+      font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+    }
+    .auth-divider::before, .auth-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--black-border);
+    }
+
+    /* =============================================
+       PARENT APP
+    ============================================= */
+    #parent-app {
+      position: fixed; inset: 0; z-index: 400;
+      background: var(--black);
+      flex-direction: column;
+      padding-top: var(--safe-top);
+    }
+    .parent-signout-btn {
+      background: transparent; border: 1px solid var(--black-border);
+      color: var(--gray); font-family: var(--font-ui); font-size: 12px;
+      font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+      padding: 6px 12px; border-radius: 6px; cursor: pointer;
+    }
+    .parent-add-btn {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      width: 100%; background: var(--red); border: none; border-radius: 12px;
+      color: var(--white); font-family: var(--font-ui); font-size: 16px;
+      font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      padding: 16px; cursor: pointer; margin-bottom: 16px; transition: background 0.2s;
+    }
+    .parent-add-btn:active { background: var(--red-dark); }
+    .parent-refresh-btn {
+      background: none; border: 1px solid var(--black-border);
+      color: var(--gray); font-family: var(--font-ui); font-size: 11px;
+      font-weight: 600; padding: 5px 12px; border-radius: 6px;
+      cursor: pointer; letter-spacing: 1px;
+    }
+    .parent-section-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 3px;
+      color: var(--gray); text-transform: uppercase; margin-bottom: 12px;
+    }
+    .athlete-card {
+      background: var(--black-card); border: 1px solid var(--black-border);
+      border-radius: 14px; margin-bottom: 14px; overflow: hidden;
+    }
+    .athlete-card-top {
+      display: flex; align-items: center; gap: 14px; padding: 16px 16px 12px;
+    }
+    .athlete-avatar {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--red); color: var(--white);
+      font-family: var(--font-display); font-size: 20px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .athlete-info { flex: 1; }
+    .athlete-name { font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+    .athlete-sport { font-size: 11px; color: var(--gray); margin-top: 2px; }
+    .athlete-pct {
+      font-family: var(--font-display); font-size: 28px;
+      letter-spacing: 2px; color: var(--gray);
+    }
+    .athlete-pct.goal-hit { color: #4ade80; }
+    .athlete-stats {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid var(--black-border);
+    }
+    .as-item {
+      padding: 10px 6px; text-align: center;
+      border-right: 1px solid var(--black-border);
+    }
+    .as-item:last-child { border-right: none; }
+    .as-val { font-family: var(--font-display); font-size: 18px; letter-spacing: 1px; }
+    .as-val.red-text { color: var(--red); }
+    .as-label { font-size: 9px; font-weight: 700; letter-spacing: 1px; color: var(--gray); text-transform: uppercase; margin-top: 2px; }
+    .athlete-actions {
+      display: flex; gap: 8px; padding: 10px 12px;
+      border-top: 1px solid var(--black-border);
+    }
+    .athlete-action-btn {
+      flex: 1; background: var(--black); border: 1px solid var(--black-border);
+      color: var(--gray-light); font-family: var(--font-ui); font-size: 10px;
+      font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+      padding: 8px 4px; border-radius: 8px; cursor: pointer;
+    }
+    .athlete-action-btn.primary {
+      background: rgba(204,0,0,0.12); border-color: var(--red); color: var(--red);
+    }
+    .athlete-log { padding: 0 12px 12px; }
+    .al-entry {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 10px; background: var(--black);
+      border-radius: 8px; margin-bottom: 6px;
+      font-size: 13px; font-weight: 600;
+    }
+    .al-entry span:last-child { color: var(--red); font-family: var(--font-display); font-size: 16px; }
+    .no-athletes {
+      text-align: center; padding: 60px 20px;
+      color: var(--gray); font-size: 14px; font-weight: 600; letter-spacing: 1px;
+    }
+    .no-athletes .na-big {
+      font-family: var(--font-display); font-size: 48px;
+      letter-spacing: 4px; color: var(--black-border); margin-bottom: 12px;
+    }
   </style>
 </head>
 <body>
-<div id="app">
+
+<!-- AUTH OVERLAY -->
+<div id="auth-overlay" style="display:flex">
+  <div class="auth-inner">
+    <div class="ob-logo">GAINSZN</div>
+    <div class="ob-tagline">Bulk Season Tracker</div>
+
+    <div id="auth-parent-section">
+      <div class="ob-heading">PARENT SIGN IN</div>
+      <div class="ob-sub">Sign in to manage your athletes.</div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="auth-email" placeholder="you@email.com" autocomplete="email" inputmode="email" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <button class="btn-primary" id="auth-btn-signin" onclick="signInParent()">SIGN IN</button>
+      <div class="auth-divider">or</div>
+      <button class="btn-secondary" id="auth-btn-signup" onclick="signUpParent()">CREATE PARENT ACCOUNT</button>
+      <div class="auth-error" id="auth-error"></div>
+    </div>
+
+    <div id="auth-athlete-section" style="display:none">
+      <div class="auth-avatar" id="auth-avatar">?</div>
+      <div class="ob-heading" id="auth-athlete-heading">SET UP YOUR APP</div>
+      <div class="ob-sub">Create your account to get started.</div>
+      <div class="form-group">
+        <label>Your Email</label>
+        <input type="email" id="athlete-email" placeholder="you@email.com" autocomplete="email" inputmode="email" />
+      </div>
+      <div class="form-group">
+        <label>Create Password</label>
+        <input type="password" id="athlete-password" placeholder="min 6 characters" autocomplete="new-password" />
+      </div>
+      <button class="btn-primary" id="athlete-btn-signup" onclick="submitAthleteSignup()">SET UP MY APP</button>
+      <div class="auth-divider">parent?</div>
+      <button class="btn-secondary" onclick="showParentLoginFromAthlete()">SIGN IN AS PARENT INSTEAD</button>
+      <div class="auth-error" id="athlete-error"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PARENT APP -->
+<div id="parent-app" style="display:none">
+  <div class="top-bar">
+    <div>
+      <div class="logo">GAINSZN</div>
+      <div class="tagline">Parent Dashboard</div>
+    </div>
+    <button class="parent-signout-btn" onclick="signOut()">SIGN OUT</button>
+  </div>
+  <div class="parent-content" id="parent-dashboard-content" style="-webkit-overflow-scrolling:touch;overflow-y:auto;flex:1;padding:16px 20px"></div>
+</div>
+
+<!-- ATHLETE APP -->
+<div id="app" style="display:none">
 
   <!-- TOP BAR -->
   <div class="top-bar">
     <div>
       <div class="logo">GAINSZN</div>
-      <div class="tagline">Weiss Wolves <span style="color:var(--red)">•</span> Bulk Phase</div>
+      <div class="tagline" id="top-tagline">Bulk Phase</div>
     </div>
-    <button class="parent-btn" onclick="openParent()">PARENT</button>
+    <div class="top-bar-right">
+      <button class="profile-avatar-btn" id="profile-avatar-btn">?</button>
+      <button class="parent-btn" id="athlete-signout-btn" onclick="signOut()" style="display:none">SIGN OUT</button>
+    </div>
   </div>
 
   <!-- VIEWS -->
@@ -1336,7 +1855,7 @@
       <!-- Notification Banner -->
       <div class="notif-banner" id="notif-banner" onclick="requestNotifPermission()">
         <div class="nb-title">Enable Meal Alerts</div>
-        <div class="nb-sub">Tap to get notified when it's time to eat. No excuses.</div>
+        <div class="nb-sub">App must be open to receive alerts. Install to home screen for best results.</div>
       </div>
 
       <!-- Missed Meal Alert -->
@@ -1353,7 +1872,7 @@
             stroke-dasharray="527.8" stroke-dashoffset="527.8" />
           <text class="ring-center-text ring-calories" id="ring-calories" x="100" y="91">0</text>
           <text class="ring-center-text ring-label" x="100" y="113">cal today</text>
-          <text class="ring-center-text ring-goal" x="100" y="130">/ 3,500 goal</text>
+          <text class="ring-center-text ring-goal" id="ring-goal-text" x="100" y="130">/ 3,500 goal</text>
         </svg>
         <div class="ring-motivational" id="ring-motivational">GainSzn don't stop for nothing.</div>
       </div>
@@ -1405,9 +1924,9 @@
         <div class="weighin-progress">
           <div class="wp-bar-bg"><div class="wp-bar-fill" id="wi-bar" style="width:0%"></div></div>
           <div class="wp-labels">
-            <span>140 lbs</span>
+            <span id="wi-start-lbl">140 lbs</span>
             <span id="wi-pct">0%</span>
-            <span>160 lbs</span>
+            <span id="wi-goal-lbl">160 lbs</span>
           </div>
         </div>
         <div class="weighin-praise" id="wi-praise"></div>
@@ -1444,7 +1963,7 @@
     <div class="view" id="view-schedule">
       <div class="schedule-header">
         <h2>EAT SCHEDULE</h2>
-        <p>6 windows · 3,500 cal target · Stack every one.</p>
+        <p id="schedule-desc">6 windows · 3,500 cal target · Stack every one.</p>
       </div>
       <div class="meal-windows" id="meal-windows"></div>
     </div>
@@ -1500,6 +2019,7 @@
   </nav>
 
 </div>
+<!-- end #app -->
 
 <!-- LOG MODAL -->
 <div class="modal-overlay" id="log-modal" onclick="closeLogModal(event)">
@@ -1534,48 +2054,45 @@
   </div>
 </div>
 
-<!-- PARENT OVERLAY -->
-<div class="parent-overlay" id="parent-overlay">
-  <div class="parent-header">
-    <h2>PARENT DASHBOARD</h2>
-    <button class="close-btn" onclick="closeParent()">CLOSE</button>
+<!-- ADD ATHLETE MODAL -->
+<div class="modal-overlay" id="add-athlete-modal" onclick="closeAddAthlete(event)">
+  <div class="modal" style="max-height:85vh;overflow-y:auto">
+    <div class="modal-handle"></div>
+    <h3>ADD ATHLETE</h3>
+    <div class="form-group">
+      <label>Athlete Name</label>
+      <input type="text" id="add-name" placeholder="e.g. KJ" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label>Sport / Activity</label>
+      <input type="text" id="add-sport" placeholder="e.g. Football · Dance" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label>Daily Calorie Goal</label>
+      <input type="number" id="add-cals" placeholder="e.g. 3500" min="1000" max="10000" step="100" />
+    </div>
+    <div class="form-group">
+      <label>Current Weight (lbs)</label>
+      <input type="number" id="add-start-w" placeholder="e.g. 140" min="50" max="400" step="0.5" />
+    </div>
+    <div class="form-group">
+      <label>Goal Weight (lbs)</label>
+      <input type="number" id="add-goal-w" placeholder="e.g. 160" min="50" max="400" step="0.5" />
+    </div>
+    <button class="btn-primary" id="add-athlete-btn" onclick="submitAddAthlete()">LET'S EAT</button>
+    <button class="btn-secondary" onclick="closeAddAthlete()">Cancel</button>
   </div>
+</div>
 
-  <!-- PIN Screen -->
-  <div id="pin-screen" class="pin-screen">
-    <div>
-      <div class="pin-title">ENTER PIN</div>
-      <div class="pin-sub" style="margin-top:8px">Parent access only</div>
-    </div>
-    <div class="pin-dots" id="pin-dots">
-      <div class="pin-dot"></div>
-      <div class="pin-dot"></div>
-      <div class="pin-dot"></div>
-      <div class="pin-dot"></div>
-    </div>
-    <div class="pin-error-msg" id="pin-error"></div>
-    <div class="pin-keypad">
-      <button class="pin-key" onclick="pinPress('1')">1</button>
-      <button class="pin-key" onclick="pinPress('2')">2</button>
-      <button class="pin-key" onclick="pinPress('3')">3</button>
-      <button class="pin-key" onclick="pinPress('4')">4</button>
-      <button class="pin-key" onclick="pinPress('5')">5</button>
-      <button class="pin-key" onclick="pinPress('6')">6</button>
-      <button class="pin-key" onclick="pinPress('7')">7</button>
-      <button class="pin-key" onclick="pinPress('8')">8</button>
-      <button class="pin-key" onclick="pinPress('9')">9</button>
-      <button class="pin-key del" onclick="pinDel()">⌫</button>
-      <button class="pin-key" onclick="pinPress('0')">0</button>
-      <button class="pin-key enter" onclick="pinEnter()">✓</button>
-    </div>
-  </div>
-
-  <!-- Dashboard Content -->
-  <div class="parent-content" id="dash-screen" style="display:none;">
-    <div class="dash-summary-cards" id="dash-cards"></div>
-    <div class="dash-log-title">TODAY'S FULL LOG</div>
-    <div id="dash-log-entries"></div>
-    <button class="share-btn" onclick="shareSummary()">SHARE SUMMARY</button>
+<!-- SHARE SETUP MODAL -->
+<div class="share-modal-overlay" id="share-setup-overlay" onclick="closeShareSetup(event)">
+  <div class="share-modal">
+    <div class="sm-title">ATHLETE SETUP</div>
+    <div class="sm-sub" id="sm-sub-text">Scan or share this link to set up on a new device</div>
+    <div class="sm-qr"><canvas id="setup-qr-canvas"></canvas></div>
+    <div class="sm-link" id="sm-link-text"></div>
+    <button class="btn-primary" onclick="copySetupLink()">COPY LINK</button>
+    <button class="btn-secondary" style="margin-top:8px" onclick="closeShareSetup()">Done</button>
   </div>
 </div>
 
@@ -1597,15 +2114,58 @@
   </div>
 </div>
 
+<!-- INSTALL BANNER -->
+<div class="install-banner" id="install-banner">
+  <div class="install-banner-icon">G</div>
+  <div class="install-banner-text">
+    <div class="install-banner-title" id="install-banner-title">Add to Home Screen</div>
+    <div class="install-banner-sub" id="install-banner-sub">Install GainSzn for quick access</div>
+  </div>
+  <div class="install-banner-actions">
+    <button class="install-btn" id="install-btn">Install</button>
+    <button class="install-dismiss" id="install-dismiss" aria-label="Dismiss">×</button>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script>
 /* =============================================
-   DATA
+   SUPABASE CLIENT
 ============================================= */
-const DAILY_GOAL = 3500;
-const PARENT_PIN = '2010';
+const SUPABASE_URL = 'https://kpgvrntpigvtgyrzmfba.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwZ3ZybnRwaWd2dGd5cnptZmJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNzQ1OTcsImV4cCI6MjA5MTk1MDU5N30.6g4rjiDbUmbM2A3I5fzQUzxHxF3PQ_QuRRMrT20RHzs';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true }
+});
+
+/* =============================================
+   STATE
+============================================= */
+let currentUser    = null;
+let currentRole    = null;    // 'parent' | 'athlete'
+let currentProfile = null;    // gainszn_profiles row
+let _setupData     = null;    // {profileId, name} from setup link
+let mealLog        = [];
+let weighIns       = [];
+let DAILY_GOAL     = 3500;
+let WEIGHT_START   = 140;
+let WEIGHT_GOAL    = 160;
+let notifTimers    = [];
+let _todayDate     = new Date().toISOString().split('T')[0];
+
+/* =============================================
+   UTILITIES
+============================================= */
+function getInitials(name) {
+  return name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function setAuthError(id, msg) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = msg;
+}
 
 const MEAL_WINDOWS = [
   { time: '7:00 AM',  hour: 7,  min: 0,  name: 'Breakfast',       target: 700,  emoji: '🍳', suggestions: ['Eggs + oatmeal', 'Protein shake', 'Banana', 'Greek yogurt'] },
@@ -1657,36 +2217,10 @@ const FOOD_DB = {
 };
 
 /* =============================================
-   STATE
+   COMPUTED STATE
 ============================================= */
-let todayKey = getTodayKey();
-let mealLog = loadLog();
-let notifTimers = [];
-let pinBuffer = '';
-
-function getTodayKey() {
-  const d = new Date();
-  return `log_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
-}
-
-function loadLog() {
-  try {
-    const stored = localStorage.getItem(todayKey);
-    return stored ? JSON.parse(stored) : [];
-  } catch { return []; }
-}
-
-function saveLog() {
-  localStorage.setItem(todayKey, JSON.stringify(mealLog));
-}
-
-function getTotalCals() {
-  return mealLog.reduce((s, e) => s + (e.calories || 0), 0);
-}
-
-function getTotalProtein() {
-  return mealLog.reduce((s, e) => s + (e.protein || 0), 0);
-}
+function getTotalCals()    { return mealLog.reduce((s, e) => s + (e.calories || 0), 0); }
+function getTotalProtein() { return mealLog.reduce((s, e) => s + (e.protein  || 0), 0); }
 
 /* =============================================
    NAVIGATION
@@ -1864,7 +2398,7 @@ function renderLog() {
     return;
   }
 
-  container.innerHTML = mealLog.map((entry, i) => `
+  container.innerHTML = mealLog.map(entry => `
     <div class="meal-entry">
       <div class="me-icon">${getMealEmoji(entry.type)}</div>
       <div class="me-info">
@@ -1872,7 +2406,7 @@ function renderLog() {
         <div class="me-meta">${entry.time} · ${entry.type} · ${entry.protein || 0}g protein</div>
       </div>
       <div class="me-cals">${entry.calories}</div>
-      <button class="me-del" onclick="deleteEntry(${i})">×</button>
+      <button class="me-del" onclick="deleteEntry('${entry.id}')">×</button>
     </div>
   `).join('');
 }
@@ -1918,30 +2452,21 @@ function closeLogModal(e) {
   document.getElementById('log-modal').classList.remove('show');
 }
 
-function submitLog() {
-  const name = document.getElementById('log-food-name').value.trim();
+async function submitLog() {
+  if (!currentProfile) return;
+  const name     = document.getElementById('log-food-name').value.trim();
   const calories = parseInt(document.getElementById('log-calories').value) || 0;
-  const protein = parseInt(document.getElementById('log-protein').value) || 0;
-  const type = document.getElementById('log-meal-type').value;
+  const protein  = parseInt(document.getElementById('log-protein').value)  || 0;
+  const type     = document.getElementById('log-meal-type').value;
 
-  if (!name) {
-    document.getElementById('log-food-name').focus();
-    showToast('Name what you ate, bro.');
-    return;
-  }
-  if (!calories) {
-    document.getElementById('log-calories').focus();
-    showToast('Estimate the calories.');
-    return;
-  }
+  if (!name)     { showToast('Name what you ate, bro.'); return; }
+  if (!calories) { showToast('Estimate the calories.');  return; }
 
-  const now = new Date();
+  const now     = new Date();
   const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const tempId  = 'temp_' + now.getTime();
 
-  const entry = { name, calories, protein, type, time: timeStr, ts: now.getTime() };
-  mealLog.push(entry);
-  saveLog();
-
+  mealLog.push({ id: tempId, name, calories, protein, type, time: timeStr, ts: now.getTime() });
   document.getElementById('log-modal').classList.remove('show');
   renderLog();
   updateHome();
@@ -1953,14 +2478,30 @@ function submitLog() {
     'Locked in. ' + calories + ' cal added.',
   ];
   showToast(copies[Math.floor(Math.random() * copies.length)]);
+
+  const { data, error } = await sb.from('gainszn_meal_logs').insert({
+    profile_id:  currentProfile.id,
+    log_date:    now.toISOString().split('T')[0],
+    name, calories, protein,
+    meal_type:   type,
+    logged_time: timeStr,
+    logged_at:   now.toISOString()
+  }).select().single();
+
+  if (!error && data) {
+    const idx = mealLog.findIndex(e => e.id === tempId);
+    if (idx >= 0) mealLog[idx].id = data.id;
+  }
 }
 
-function deleteEntry(i) {
-  mealLog.splice(i, 1);
-  saveLog();
+async function deleteEntry(id) {
+  mealLog = mealLog.filter(e => e.id !== id);
   renderLog();
   updateHome();
   showToast('Removed.');
+  if (!String(id).startsWith('temp_')) {
+    await sb.from('gainszn_meal_logs').delete().eq('id', id);
+  }
 }
 
 /* =============================================
@@ -2072,144 +2613,393 @@ function quickAddFood(item, cat) {
 }
 
 /* =============================================
-   PARENT DASHBOARD
+   AUTH SCREEN
 ============================================= */
-function openParent() {
-  document.getElementById('parent-overlay').classList.add('show');
-  document.getElementById('pin-screen').style.display = 'flex';
-  document.getElementById('dash-screen').style.display = 'none';
-  pinBuffer = '';
-  updatePinDots();
-  document.getElementById('pin-error').textContent = '';
-}
-
-function closeParent() {
-  document.getElementById('parent-overlay').classList.remove('show');
-  pinBuffer = '';
-}
-
-function pinPress(d) {
-  if (pinBuffer.length < 4) {
-    pinBuffer += d;
-    updatePinDots();
-    if (pinBuffer.length === 4) setTimeout(pinEnter, 100);
-  }
-}
-
-function pinDel() {
-  pinBuffer = pinBuffer.slice(0, -1);
-  updatePinDots();
-}
-
-function pinEnter() {
-  if (pinBuffer === PARENT_PIN) {
-    document.getElementById('pin-screen').style.display = 'none';
-    document.getElementById('dash-screen').style.display = 'block';
-    renderDashboard();
+function showAuthOverlay(mode) {
+  document.getElementById('auth-overlay').style.display = 'flex';
+  document.getElementById('app').style.display          = 'none';
+  document.getElementById('parent-app').style.display   = 'none';
+  if (mode === 'athlete' && _setupData) {
+    document.getElementById('auth-parent-section').style.display  = 'none';
+    document.getElementById('auth-athlete-section').style.display = 'block';
+    const av = document.getElementById('auth-avatar');
+    if (av) av.textContent = getInitials(_setupData.name);
+    const hd = document.getElementById('auth-athlete-heading');
+    if (hd) hd.textContent = `${_setupData.name.toUpperCase()}'S APP`;
   } else {
-    document.getElementById('pin-error').textContent = 'Wrong PIN. Try again.';
-    const dots = document.querySelectorAll('.pin-dot');
-    dots.forEach(d => d.classList.add('error'));
-    setTimeout(() => {
-      dots.forEach(d => { d.classList.remove('error', 'filled'); });
-      pinBuffer = '';
-      document.getElementById('pin-error').textContent = '';
-    }, 800);
+    document.getElementById('auth-parent-section').style.display  = 'block';
+    document.getElementById('auth-athlete-section').style.display = 'none';
   }
 }
 
-function updatePinDots() {
-  const dots = document.querySelectorAll('.pin-dot');
-  dots.forEach((d, i) => {
-    d.classList.toggle('filled', i < pinBuffer.length);
-    d.classList.remove('error');
-  });
+function showParentLoginFromAthlete() {
+  document.getElementById('auth-parent-section').style.display  = 'block';
+  document.getElementById('auth-athlete-section').style.display = 'none';
 }
 
-function renderDashboard() {
-  const total = getTotalCals();
-  const protein = getTotalProtein();
-  const meals = mealLog.length;
-  const lastAte = meals > 0 ? mealLog[mealLog.length - 1].time : 'Nothing yet';
+async function signInParent() {
+  const email    = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if (!email || !password) { setAuthError('auth-error', 'Enter email and password.'); return; }
+  setAuthError('auth-error', '');
+  const btn = document.getElementById('auth-btn-signin');
+  btn.textContent = 'Signing in...'; btn.disabled = true;
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  btn.textContent = 'SIGN IN'; btn.disabled = false;
+  if (error) { setAuthError('auth-error', error.message); return; }
+  currentUser = data.user;
+  await routeByRole();
+}
 
-  const pct = Math.round((total / DAILY_GOAL) * 100);
+async function signUpParent() {
+  const email    = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if (!email || !password) { setAuthError('auth-error', 'Enter email and password.'); return; }
+  if (password.length < 6) { setAuthError('auth-error', 'Password must be at least 6 characters.'); return; }
+  setAuthError('auth-error', '');
+  const btn = document.getElementById('auth-btn-signup');
+  btn.textContent = 'Creating...'; btn.disabled = true;
+  const { data, error } = await sb.auth.signUp({ email, password });
+  btn.textContent = 'CREATE PARENT ACCOUNT'; btn.disabled = false;
+  if (error) { setAuthError('auth-error', error.message); return; }
+  if (data.session) {
+    currentUser = data.user;
+    currentRole = 'parent';
+    showParentApp([]);
+  } else {
+    setAuthError('auth-error', 'Check your email to confirm your account, then sign in.');
+  }
+}
 
-  document.getElementById('dash-cards').innerHTML = `
-    <div class="dash-card">
-      <div class="dc-label">Total Calories</div>
-      <div class="dc-val red">${total.toLocaleString()}</div>
-      <div class="dc-sub">${pct}% of ${DAILY_GOAL.toLocaleString()} goal</div>
+async function submitAthleteSignup() {
+  if (!_setupData) { showToast('Invalid setup link.'); return; }
+  const email    = document.getElementById('athlete-email').value.trim();
+  const password = document.getElementById('athlete-password').value;
+  if (!email || !password) { setAuthError('athlete-error', 'Enter email and password.'); return; }
+  if (password.length < 6) { setAuthError('athlete-error', 'Password must be at least 6 characters.'); return; }
+  setAuthError('athlete-error', '');
+  const btn = document.getElementById('athlete-btn-signup');
+  btn.textContent = 'Setting up...'; btn.disabled = true;
+
+  const { data, error } = await sb.auth.signUp({ email, password });
+  if (error) { btn.textContent = 'SET UP MY APP'; btn.disabled = false; setAuthError('athlete-error', error.message); return; }
+
+  currentUser = data.user;
+  if (!data.session) {
+    const { data: si, error: sie } = await sb.auth.signInWithPassword({ email, password });
+    if (sie || !si.session) {
+      btn.textContent = 'SET UP MY APP'; btn.disabled = false;
+      setAuthError('athlete-error', 'Account created. Sign in to finish setup.');
+      document.getElementById('auth-parent-section').style.display  = 'block';
+      document.getElementById('auth-athlete-section').style.display = 'none';
+      document.getElementById('auth-email').value = email;
+      return;
+    }
+    currentUser = si.user;
+  }
+
+  const { error: claimErr } = await sb
+    .from('gainszn_profiles')
+    .update({ athlete_id: currentUser.id })
+    .eq('id', _setupData.profileId)
+    .is('athlete_id', null);
+
+  if (claimErr) {
+    btn.textContent = 'SET UP MY APP'; btn.disabled = false;
+    setAuthError('athlete-error', 'This setup link may already be claimed. Ask your parent for a new one.');
+    return;
+  }
+
+  const { data: profile } = await sb.from('gainszn_profiles').select('*').eq('id', _setupData.profileId).single();
+  currentRole    = 'athlete';
+  currentProfile = profile;
+  _setupData     = null;
+  await loadAthleteData();
+  showAthleteApp();
+  showToast(`Welcome, ${profile.name}! Time to eat.`);
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+}
+
+/* =============================================
+   SETUP LINK
+============================================= */
+function checkSetupLinkHash() {
+  const hash = location.hash;
+  if (!hash.startsWith('#setup=')) return null;
+  try {
+    const data = JSON.parse(decodeURIComponent(escape(atob(hash.slice(7)))));
+    if (!data.profileId || !data.name) return null;
+    history.replaceState(null, '', location.pathname);
+    return data;
+  } catch { history.replaceState(null, '', location.pathname); return null; }
+}
+
+function buildSetupURL(profileId, name) {
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify({ profileId, name }))));
+  return `${location.origin}${location.pathname}#setup=${encoded}`;
+}
+
+/* =============================================
+   INIT & ROUTING
+============================================= */
+async function init() {
+  registerSW();
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
+
+  _setupData = checkSetupLinkHash();
+
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    await routeByRole();
+  } else if (_setupData) {
+    showAuthOverlay('athlete');
+  } else {
+    showAuthOverlay('parent');
+  }
+
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && !currentUser) {
+      currentUser = session.user;
+      await routeByRole();
+    } else if (event === 'SIGNED_OUT') {
+      currentUser = null; currentRole = null; currentProfile = null;
+      mealLog = []; weighIns = [];
+      showAuthOverlay('parent');
+    }
+  });
+
+  setGreeting();
+  setInterval(rotateGreeting, 8000);
+  checkNotifPermission();
+  showInstallBanner();
+  setInterval(() => {
+    if (document.getElementById('view-home')?.classList.contains('active')) updateHome();
+  }, 60000);
+  setInterval(() => {
+    const d = new Date().toISOString().split('T')[0];
+    if (d !== _todayDate) {
+      _todayDate = d;
+      if (currentRole === 'athlete') loadAthleteData().then(() => { renderLog(); updateHome(); });
+    }
+  }, 60000);
+}
+
+async function routeByRole() {
+  const { data: athleteProfile } = await sb
+    .from('gainszn_profiles').select('*').eq('athlete_id', currentUser.id).maybeSingle();
+  if (athleteProfile) {
+    currentRole = 'athlete'; currentProfile = athleteProfile;
+    await loadAthleteData();
+    showAthleteApp();
+    return;
+  }
+  const { data: parentProfiles } = await sb
+    .from('gainszn_profiles').select('*').eq('parent_id', currentUser.id);
+  currentRole = 'parent';
+  showParentApp(parentProfiles || []);
+}
+
+/* =============================================
+   PARENT APP
+============================================= */
+function showParentApp(profiles) {
+  document.getElementById('auth-overlay').style.display = 'none';
+  document.getElementById('app').style.display          = 'none';
+  document.getElementById('parent-app').style.display   = 'flex';
+  renderParentDashboard(profiles);
+}
+
+async function refreshParentDashboard() {
+  const { data: profiles } = await sb.from('gainszn_profiles').select('*').eq('parent_id', currentUser.id);
+  renderParentDashboard(profiles || []);
+}
+
+async function renderParentDashboard(profiles) {
+  const container = document.getElementById('parent-dashboard-content');
+  const today     = new Date().toISOString().split('T')[0];
+
+  let html = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="parent-section-title">${profiles.length} ATHLETE${profiles.length !== 1 ? 'S' : ''}</div>
+      <button class="parent-refresh-btn" onclick="refreshParentDashboard()">↻ Refresh</button>
     </div>
-    <div class="dash-card">
-      <div class="dc-label">Meals Logged</div>
-      <div class="dc-val">${meals}</div>
-      <div class="dc-sub">of 6 windows</div>
-    </div>
-    <div class="dash-card">
-      <div class="dc-label">Total Protein</div>
-      <div class="dc-val">${protein}g</div>
-      <div class="dc-sub">target: 160g+</div>
-    </div>
-    <div class="dash-card">
-      <div class="dc-label">Last Ate</div>
-      <div class="dc-val" style="font-size:24px">${lastAte}</div>
-      <div class="dc-sub">${meals > 0 ? mealLog[meals-1].name : '—'}</div>
-    </div>
+    <button class="parent-add-btn" onclick="openAddAthlete()">+ ADD ATHLETE</button>
   `;
 
-  const logHtml = meals === 0
-    ? '<div style="color:var(--gray);font-size:14px;text-align:center;padding:20px">Nothing logged today.</div>'
-    : mealLog.map(e => `
-        <div class="dash-meal-entry">
-          <div class="dme-left">
-            <div class="dme-name">${esc(e.name)}</div>
-            <div class="dme-time">${e.time} · ${e.type} · ${e.protein||0}g protein</div>
-          </div>
-          <div class="dme-cals">${e.calories} cal</div>
-        </div>
-      `).join('');
+  if (profiles.length === 0) {
+    html += `<div class="no-athletes"><div class="na-big">ADD ONE</div><div>No athletes yet. Tap above to get started.</div></div>`;
+    container.innerHTML = html;
+    return;
+  }
 
-  document.getElementById('dash-log-entries').innerHTML = logHtml;
+  const rows = await Promise.all(profiles.map(async p => {
+    const { data: logs } = await sb
+      .from('gainszn_meal_logs').select('calories,protein,name,meal_type,logged_time')
+      .eq('profile_id', p.id).eq('log_date', today);
+    const totalCals    = (logs || []).reduce((s, e) => s + (e.calories || 0), 0);
+    const totalProtein = (logs || []).reduce((s, e) => s + (e.protein  || 0), 0);
+    const pct          = Math.round((totalCals / (p.calorie_goal || 1)) * 100);
+    return { p, logs: logs || [], totalCals, totalProtein, pct };
+  }));
+
+  window._parentAthleteData = rows;
+
+  for (const { p, logs, totalCals, totalProtein, pct } of rows) {
+    const claimed = p.athlete_id ? '✓ Claimed' : '⚠ Not set up yet';
+    html += `
+      <div class="athlete-card">
+        <div class="athlete-card-top">
+          <div class="athlete-avatar">${getInitials(p.name)}</div>
+          <div class="athlete-info">
+            <div class="athlete-name">${esc(p.name)}</div>
+            <div class="athlete-sport">${esc(p.sport || 'Athlete')} · ${claimed}</div>
+          </div>
+          <div class="athlete-pct ${pct >= 100 ? 'goal-hit' : ''}">${pct}%</div>
+        </div>
+        <div class="athlete-stats">
+          <div class="as-item"><div class="as-val">${totalCals.toLocaleString()}</div><div class="as-label">Cal</div></div>
+          <div class="as-item"><div class="as-val">${totalProtein}g</div><div class="as-label">Protein</div></div>
+          <div class="as-item"><div class="as-val">${logs.length}</div><div class="as-label">Meals</div></div>
+          <div class="as-item"><div class="as-val red-text">${Math.max(0,(p.calorie_goal||0)-totalCals).toLocaleString()}</div><div class="as-label">Left</div></div>
+        </div>
+        <div class="athlete-actions">
+          <button class="athlete-action-btn primary" onclick="openShareSetupForProfile('${p.id}','${esc(p.name)}')">Share Link</button>
+          <button class="athlete-action-btn" onclick="toggleAthleteLog('${p.id}')">View Log</button>
+          <button class="athlete-action-btn" onclick="shareAthleteDaily('${p.id}')">Summary</button>
+        </div>
+        <div class="athlete-log" id="athlete-log-${p.id}" style="display:none">
+          ${logs.length === 0
+            ? '<div style="color:var(--gray);font-size:13px;padding:8px 0;text-align:center">Nothing logged today.</div>'
+            : logs.map(e => `<div class="al-entry"><span>${getMealEmoji(e.meal_type)} ${esc(e.name)}</span><span>${e.calories} cal</span></div>`).join('')
+          }
+        </div>
+      </div>`;
+  }
+  container.innerHTML = html;
 }
 
-function shareSummary() {
-  const d = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-  const total = getTotalCals();
-  const protein = getTotalProtein();
-  const meals = mealLog.length;
-  const pct = Math.round((total / DAILY_GOAL) * 100);
-  const lastAte = meals > 0 ? mealLog[mealLog.length - 1].time : 'N/A';
+function toggleAthleteLog(profileId) {
+  const el = document.getElementById('athlete-log-' + profileId);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
 
-  let log = mealLog.map(e => `  • ${e.time} — ${e.name} (${e.calories} cal, ${e.protein||0}g protein)`).join('\n');
-  if (!log) log = '  No meals logged.';
-
-  const summary = `GainSzn Daily Report — ${d}
-
-KJ's Stats
-━━━━━━━━━━━━━━━━━━
-Total Calories: ${total.toLocaleString()} / ${DAILY_GOAL.toLocaleString()} (${pct}%)
-Total Protein: ${protein}g
-Meals Logged: ${meals} of 6
-Last Ate: ${lastAte}
-
-Today's Meal Log:
-${log}
-
-${total >= DAILY_GOAL ? '✅ Goal hit. Wolves eat different.' : `⚠️ ${(DAILY_GOAL - total).toLocaleString()} cal short of goal.`}
-
-— GainSzn App`;
-
+function shareAthleteDaily(profileId) {
+  const rows = window._parentAthleteData || [];
+  const ad   = rows.find(a => a.p.id === profileId);
+  if (!ad) return;
+  const d    = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  const pct  = Math.round((ad.totalCals / (ad.p.calorie_goal || 1)) * 100);
+  let log    = ad.logs.map(e => `  • ${e.logged_time} — ${e.name} (${e.calories} cal, ${e.protein||0}g protein)`).join('\n') || '  No meals logged.';
+  const summary = `GainSzn Daily Report — ${d}\n\n${ad.p.name}'s Stats\n${'━'.repeat(20)}\nTotal Calories: ${ad.totalCals.toLocaleString()} / ${(ad.p.calorie_goal||0).toLocaleString()} (${pct}%)\nTotal Protein: ${ad.totalProtein}g\nMeals Logged: ${ad.logs.length} of 6\n\nToday's Meal Log:\n${log}\n\n${ad.totalCals >= ad.p.calorie_goal ? '✅ Goal hit. Wolves eat different.' : `⚠️ ${((ad.p.calorie_goal||0)-ad.totalCals).toLocaleString()} cal short of goal.`}\n\n— GainSzn App`;
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(summary).then(() => showToast('Summary copied to clipboard.'));
+    navigator.clipboard.writeText(summary).then(() => showToast('Summary copied!'));
   } else {
     const ta = document.createElement('textarea');
-    ta.value = summary;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    showToast('Summary copied.');
+    ta.value = summary; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta); showToast('Summary copied.');
   }
+}
+
+/* =============================================
+   ADD ATHLETE MODAL
+============================================= */
+function openAddAthlete() {
+  ['add-name','add-sport','add-cals','add-start-w','add-goal-w'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('add-athlete-modal').classList.add('show');
+}
+
+function closeAddAthlete(e) {
+  if (e && e.target !== document.getElementById('add-athlete-modal')) return;
+  document.getElementById('add-athlete-modal').classList.remove('show');
+}
+
+async function submitAddAthlete() {
+  const name   = document.getElementById('add-name').value.trim();
+  const sport  = document.getElementById('add-sport').value.trim();
+  const cals   = parseInt(document.getElementById('add-cals').value);
+  const startW = parseFloat(document.getElementById('add-start-w').value);
+  const goalW  = parseFloat(document.getElementById('add-goal-w').value);
+
+  if (!name)                 { showToast('Enter athlete name.'); return; }
+  if (!cals || cals < 500)   { showToast('Enter a valid calorie goal.'); return; }
+  if (!startW || startW < 50){ showToast('Enter current weight.'); return; }
+  if (!goalW || goalW < 50)  { showToast('Enter goal weight.'); return; }
+
+  const btn = document.getElementById('add-athlete-btn');
+  btn.textContent = 'Adding...'; btn.disabled = true;
+
+  const { data, error } = await sb.from('gainszn_profiles').insert({
+    parent_id: currentUser.id,
+    name, sport: sport || '',
+    calorie_goal: cals, start_weight: startW, target_weight: goalW
+  }).select().single();
+
+  btn.textContent = "LET'S EAT"; btn.disabled = false;
+  if (error) { showToast('Error adding athlete. Try again.'); return; }
+
+  document.getElementById('add-athlete-modal').classList.remove('show');
+  showToast(`${name} added! Sharing setup link...`);
+  await refreshParentDashboard();
+  setTimeout(() => openShareSetupForProfile(data.id, data.name), 400);
+}
+
+/* =============================================
+   SHARE SETUP LINK
+============================================= */
+function openShareSetupForProfile(profileId, name) {
+  const url = buildSetupURL(profileId, name);
+  document.getElementById('sm-link-text').textContent = url;
+  document.getElementById('sm-sub-text').textContent  = `Share with ${name} to set up on their phone`;
+  document.getElementById('share-setup-overlay').classList.add('show');
+  const canvas = document.getElementById('setup-qr-canvas');
+  if (typeof QRCode !== 'undefined' && QRCode.toCanvas) {
+    QRCode.toCanvas(canvas, url, { width: 220, margin: 0, color: { dark: '#000', light: '#fff' } })
+      .catch(() => { canvas.style.display = 'none'; });
+  } else { canvas.style.display = 'none'; }
+}
+
+/* =============================================
+   ATHLETE APP
+============================================= */
+async function loadAthleteData() {
+  if (!currentProfile) return;
+  DAILY_GOAL   = currentProfile.calorie_goal;
+  WEIGHT_START = currentProfile.start_weight;
+  WEIGHT_GOAL  = currentProfile.target_weight;
+
+  const today = new Date().toISOString().split('T')[0];
+  const [{ data: logs }, { data: weighs }] = await Promise.all([
+    sb.from('gainszn_meal_logs').select('*').eq('profile_id', currentProfile.id).eq('log_date', today).order('logged_at', { ascending: true }),
+    sb.from('gainszn_weighins').select('*').eq('profile_id', currentProfile.id).order('weighed_at', { ascending: true })
+  ]);
+
+  mealLog  = (logs  || []).map(e => ({ id: e.id, name: e.name, calories: e.calories, protein: e.protein, type: e.meal_type, time: e.logged_time, ts: new Date(e.logged_at).getTime() }));
+  weighIns = (weighs || []).map(e => ({ id: e.id, weight: e.weight, note: e.note || '', ts: new Date(e.weighed_at).getTime(), date: new Date(e.weighed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }));
+}
+
+function showAthleteApp() {
+  document.getElementById('auth-overlay').style.display = 'none';
+  document.getElementById('parent-app').style.display   = 'none';
+  document.getElementById('app').style.display          = 'flex';
+  const signoutBtn = document.getElementById('athlete-signout-btn');
+  if (signoutBtn) signoutBtn.style.display = 'block';
+  if (currentProfile) {
+    const avatar   = document.getElementById('profile-avatar-btn');
+    if (avatar) avatar.textContent = getInitials(currentProfile.name);
+    const tagline  = document.getElementById('top-tagline');
+    if (tagline) tagline.textContent = currentProfile.sport || 'Bulk Phase';
+    const ringGoal = document.getElementById('ring-goal-text');
+    if (ringGoal) ringGoal.textContent = `/ ${DAILY_GOAL.toLocaleString()} goal`;
+    const schedDesc = document.getElementById('schedule-desc');
+    if (schedDesc) schedDesc.textContent = `6 windows · ${DAILY_GOAL.toLocaleString()} cal target · Stack every one.`;
+  }
+  updateHome(); renderLog(); renderSchedule(); renderFood(); renderWeighIn();
 }
 
 /* =============================================
@@ -2234,7 +3024,7 @@ function requestNotifPermission() {
   Notification.requestPermission().then(perm => {
     document.getElementById('notif-banner').classList.remove('show');
     if (perm === 'granted') {
-      showToast('Meal alerts ON. No excuses.');
+      showToast('Alerts on. Keep the app open for reminders.');
       scheduleNotifications();
     } else {
       showToast('Notifications blocked. Turn them on in settings.');
@@ -2352,60 +3142,14 @@ function registerSW() {
   }
 }
 
-/* =============================================
-   INIT
-============================================= */
-function init() {
-  registerSW();
-  setGreeting();
-  updateHome();
-  renderLog();
-  renderSchedule();
-  renderFood();
-  renderWeighIn();
-  checkNotifPermission();
-
-  // Rotate hype quote every 8 seconds
-  setInterval(rotateGreeting, 8000);
-
-  // Auto-refresh home every minute
-  setInterval(() => {
-    if (document.getElementById('view-home').classList.contains('active')) {
-      updateHome();
-    }
-  }, 60000);
-
-  // Keep today key fresh (midnight rollover)
-  setInterval(() => {
-    const newKey = getTodayKey();
-    if (newKey !== todayKey) {
-      todayKey = newKey;
-      mealLog = loadLog();
-      renderLog();
-      updateHome();
-    }
-  }, 60000);
-}
+/* init() is defined above in the routing section */
 
 /* =============================================
    WEIGH-IN
 ============================================= */
-const WEIGHT_START = 140;
-const WEIGHT_GOAL  = 160;
-const WEIGHIN_KEY  = 'gainszn_weighins';
-
-function loadWeighIns() {
-  try { return JSON.parse(localStorage.getItem(WEIGHIN_KEY)) || []; }
-  catch { return []; }
-}
-
-function saveWeighIns(data) {
-  localStorage.setItem(WEIGHIN_KEY, JSON.stringify(data));
-}
-
 function openWeighInModal() {
   document.getElementById('wi-input').value = '';
-  document.getElementById('wi-note').value = '';
+  document.getElementById('wi-note').value  = '';
   document.getElementById('weighin-modal').classList.add('show');
   setTimeout(() => document.getElementById('wi-input').focus(), 300);
 }
@@ -2415,83 +3159,69 @@ function closeWeighInModal(e) {
   document.getElementById('weighin-modal').classList.remove('show');
 }
 
-function submitWeighIn() {
-  const raw = document.getElementById('wi-input').value;
+async function submitWeighIn() {
+  if (!currentProfile) return;
+  const raw    = document.getElementById('wi-input').value;
   const weight = parseFloat(raw);
-  if (!raw || isNaN(weight) || weight < 100 || weight > 300) {
+  if (!raw || isNaN(weight) || weight < 50 || weight > 500) {
     showToast('Enter a valid weight (lbs).');
     document.getElementById('wi-input').focus();
     return;
   }
-  const note = document.getElementById('wi-note').value.trim();
-  const now = new Date();
-  const entry = {
-    weight,
-    note,
-    ts: now.getTime(),
-    date: now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-  };
-
-  const data = loadWeighIns();
-  data.push(entry);
-  saveWeighIns(data);
-
+  const note   = document.getElementById('wi-note').value.trim();
+  const now    = new Date();
+  const tempId = 'temp_' + now.getTime();
+  weighIns.push({ id: tempId, weight, note, ts: now.getTime(), date: now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) });
   document.getElementById('weighin-modal').classList.remove('show');
   renderWeighIn();
-
   const gain = parseFloat((weight - WEIGHT_START).toFixed(1));
-  const praise = getWeightPraise(weight, gain, data.length);
-  showToast(praise, 3500);
+  showToast(getWeightPraise(weight, gain, weighIns.length), 3500);
+
+  const { data, error } = await sb.from('gainszn_weighins').insert({
+    profile_id: currentProfile.id, weight, note, weighed_at: now.toISOString()
+  }).select().single();
+  if (!error && data) {
+    const idx = weighIns.findIndex(e => e.id === tempId);
+    if (idx >= 0) weighIns[idx].id = data.id;
+  }
 }
 
 function renderWeighIn() {
-  const data = loadWeighIns();
-  const latest = data.length > 0 ? data[data.length - 1] : null;
+  const latest  = weighIns.length > 0 ? weighIns[weighIns.length - 1] : null;
   const current = latest ? latest.weight : null;
-
-  // Stats
-  const gain = current !== null ? parseFloat((current - WEIGHT_START).toFixed(1)) : 0;
-  const togo = current !== null ? Math.max(0, parseFloat((WEIGHT_GOAL - current).toFixed(1))) : WEIGHT_GOAL - WEIGHT_START;
-  const pct = current !== null
+  const gain    = current !== null ? parseFloat((current - WEIGHT_START).toFixed(1)) : 0;
+  const togo    = current !== null ? Math.max(0, parseFloat((WEIGHT_GOAL - current).toFixed(1))) : WEIGHT_GOAL - WEIGHT_START;
+  const pct     = current !== null
     ? Math.min(100, Math.round(((current - WEIGHT_START) / (WEIGHT_GOAL - WEIGHT_START)) * 100))
     : 0;
 
   document.getElementById('wi-current').textContent = current !== null ? current : '—';
-  document.getElementById('wi-gain').textContent = current !== null ? (gain >= 0 ? '+' + gain : gain) : '+0';
-  document.getElementById('wi-togo').textContent = current !== null ? togo : (WEIGHT_GOAL - WEIGHT_START);
-  document.getElementById('wi-bar').style.width = pct + '%';
-  document.getElementById('wi-pct').textContent = pct + '%';
+  document.getElementById('wi-gain').textContent    = current !== null ? (gain >= 0 ? '+' + gain : gain) : '+0';
+  document.getElementById('wi-togo').textContent    = current !== null ? togo : (WEIGHT_GOAL - WEIGHT_START);
+  document.getElementById('wi-bar').style.width     = pct + '%';
+  document.getElementById('wi-pct').textContent     = pct + '%';
+  document.getElementById('wi-start-lbl').textContent = `${WEIGHT_START} lbs`;
+  document.getElementById('wi-goal-lbl').textContent  = `${WEIGHT_GOAL} lbs`;
+  document.getElementById('wi-praise').textContent  =
+    current !== null ? '"' + getWeightPraise(current, gain, weighIns.length) + '"' : '';
 
-  // Praise line
-  document.getElementById('wi-praise').textContent =
-    current !== null ? '"' + getWeightPraise(current, gain, data.length) + '"' : '';
-
-  // History (last 7, newest first)
   const histEl = document.getElementById('wi-history');
-  const last7 = data.slice(-7).reverse();
-
+  const last7  = weighIns.slice(-7).reverse();
   if (last7.length === 0) {
     histEl.innerHTML = '<div class="wh-title">Weigh-In History</div><div class="wi-empty">No weigh-ins yet. Log your first one.</div>';
     return;
   }
-
   const rows = last7.map((e, i) => {
     const prev = last7[i + 1];
     let deltaHtml = '';
     if (prev) {
       const diff = parseFloat((e.weight - prev.weight).toFixed(1));
-      const cls = diff > 0 ? 'up' : diff < 0 ? 'down' : 'same';
+      const cls  = diff > 0 ? 'up' : diff < 0 ? 'down' : 'same';
       const sign = diff > 0 ? '+' : '';
-      deltaHtml = `<span class="wh-delta ${cls}">${sign}${diff}</span>`;
+      deltaHtml  = `<span class="wh-delta ${cls}">${sign}${diff}</span>`;
     }
-    return `
-      <div class="wh-entry">
-        <span class="wh-date">${e.date}${e.note ? ' · ' + esc(e.note) : ''}</span>
-        <span class="wh-weight">${e.weight} lbs</span>
-        ${deltaHtml}
-      </div>`;
+    return `<div class="wh-entry"><span class="wh-date">${e.date}${e.note ? ' · ' + esc(e.note) : ''}</span><span class="wh-weight">${e.weight} lbs</span>${deltaHtml}</div>`;
   }).join('');
-
   histEl.innerHTML = '<div class="wh-title">Last ' + last7.length + ' Weigh-Ins</div>' + rows;
 }
 
@@ -2508,7 +3238,157 @@ function getWeightPraise(weight, gain, count) {
   return `${weight} lbs. You already made history. Now make weight.`;
 }
 
-document.addEventListener('DOMContentLoaded', init);
+/* =============================================
+   PWA INSTALL
+============================================= */
+const INSTALL_DISMISSED_KEY = 'gainszn_install_dismissed';
+let _deferredInstallPrompt = null;
+
+const _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const _isInStandalone = window.navigator.standalone === true ||
+                        window.matchMedia('(display-mode: standalone)').matches ||
+                        window.matchMedia('(display-mode: fullscreen)').matches ||
+                        window.matchMedia('(display-mode: minimal-ui)').matches;
+const _isAndroidChrome = /Android/.test(navigator.userAgent) &&
+                         /Chrome\//.test(navigator.userAgent);
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredInstallPrompt = e;
+});
+
+window.addEventListener('appinstalled', () => {
+  hideBanner();
+  localStorage.setItem(INSTALL_DISMISSED_KEY, '1');
+});
+
+// Wire buttons via addEventListener — more reliable than onclick on fixed/transformed elements
+document.addEventListener('DOMContentLoaded', () => {
+  const installBtn    = document.getElementById('install-btn');
+  const dismissBtn    = document.getElementById('install-dismiss');
+
+  function onInstall(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    dismissInstall(); // always hide immediately
+    if (_deferredInstallPrompt) {
+      _deferredInstallPrompt.prompt();
+      _deferredInstallPrompt = null;
+    } else if (_isIOS) {
+      showIOSInstructions();
+    }
+  }
+
+  function onDismiss(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    dismissInstall();
+  }
+
+  installBtn.addEventListener('touchstart', onInstall, { passive: false });
+  installBtn.addEventListener('click', onInstall);
+  dismissBtn.addEventListener('touchstart', onDismiss, { passive: false });
+  dismissBtn.addEventListener('click', onDismiss);
+});
+
+function shouldShowInstallBanner() {
+  if (_isInStandalone) return false;
+  if (localStorage.getItem(INSTALL_DISMISSED_KEY)) return false;
+  return _isIOS || _isAndroidChrome;
+}
+
+function showInstallBanner() {
+  if (!shouldShowInstallBanner()) return;
+
+  // Check if already installed via getInstalledRelatedApps (Chrome 84+)
+  if (navigator.getInstalledRelatedApps) {
+    navigator.getInstalledRelatedApps().then(apps => {
+      if (apps.length > 0) {
+        localStorage.setItem(INSTALL_DISMISSED_KEY, '1');
+      } else {
+        _showBannerWhenReady();
+      }
+    }).catch(() => _showBannerWhenReady());
+    return;
+  }
+
+  _showBannerWhenReady();
+}
+
+function _showBannerWhenReady() {
+  const banner = document.getElementById('install-banner');
+  const title  = document.getElementById('install-banner-title');
+  const sub    = document.getElementById('install-banner-sub');
+  const btn    = document.getElementById('install-btn');
+
+  if (_isIOS) {
+    title.textContent = 'Add to Home Screen';
+    sub.innerHTML = `Tap the <svg class="share-icon" viewBox="0 0 20 20" fill="none" stroke="#0a84ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13V3M6 7l4-4 4 4"/><path d="M3 14v3h14v-3"/></svg> then <strong>"Add to Home Screen"</strong>`;
+    btn.textContent = 'How?';
+    setTimeout(() => banner.classList.add('show'), 2500);
+  } else {
+    title.textContent = 'Install GainSzn';
+    sub.textContent   = 'Add to home screen — no App Store needed.';
+    btn.textContent   = 'Install';
+    // Only show if the install prompt is available (not already installed)
+    if (_deferredInstallPrompt) {
+      setTimeout(() => banner.classList.add('show'), 2500);
+    } else {
+      // Wait up to 4s for the prompt — if it never comes, app is likely installed
+      setTimeout(() => {
+        if (_deferredInstallPrompt) banner.classList.add('show');
+        // else: already installed, don't show
+      }, 4000);
+    }
+  }
+}
+
+function hideBanner() {
+  const b = document.getElementById('install-banner');
+  b.classList.remove('show');
+  b.style.display = 'none';
+}
+
+function dismissInstall() {
+  hideBanner();
+  localStorage.setItem(INSTALL_DISMISSED_KEY, '1');
+}
+
+function triggerInstall() {
+  if (_isIOS) { showIOSInstructions(); return; }
+  if (!_deferredInstallPrompt) { dismissInstall(); return; }
+  _deferredInstallPrompt.prompt();
+  _deferredInstallPrompt.userChoice.then(result => {
+    if (result.outcome === 'accepted') {
+      localStorage.setItem(INSTALL_DISMISSED_KEY, '1');
+    }
+    hideBanner();
+    _deferredInstallPrompt = null;
+  });
+}
+
+function showIOSInstructions() {
+  showToast('Tap the Share icon ↑ at the bottom of Safari, then "Add to Home Screen"', 5000);
+}
+
+/* openShareSetup and closeShareSetup are now openShareSetupForProfile / closeShareSetup defined above */
+function closeShareSetup(e) {
+  if (e && e.target !== document.getElementById('share-setup-overlay')) return;
+  document.getElementById('share-setup-overlay').classList.remove('show');
+}
+
+function copySetupLink() {
+  const url = document.getElementById('sm-link-text').textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => showToast('Setup link copied!'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = url; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta); showToast('Setup link copied!');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => { init(); });
 </script>
 </body>
 </html>
