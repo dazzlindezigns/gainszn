@@ -2654,7 +2654,7 @@ async function signInParent() {
 async function signUpParent() {
   const email    = document.getElementById('auth-email').value.trim();
   const password = document.getElementById('auth-password').value;
-  if (!email || !password) { setAuthError('auth-error', 'Enter email and password.'); return; }
+  if (!email || !password) { setAuthError('auth-error', 'Enter your email and choose a password to create your account.'); return; }
   if (password.length < 6) { setAuthError('auth-error', 'Password must be at least 6 characters.'); return; }
   setAuthError('auth-error', '');
   const btn = document.getElementById('auth-btn-signup');
