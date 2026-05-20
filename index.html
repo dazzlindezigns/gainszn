@@ -1667,7 +1667,7 @@
       <!-- Notification Banner -->
       <div class="notif-banner" id="notif-banner" onclick="requestNotifPermission()">
         <div class="nb-title">Enable Meal Alerts</div>
-        <div class="nb-sub">Tap to get notified when it's time to eat. No excuses.</div>
+        <div class="nb-sub">App must be open to receive alerts. Install to home screen for best results.</div>
       </div>
 
       <!-- Missed Meal Alert -->
@@ -2807,7 +2807,7 @@ function requestNotifPermission() {
   Notification.requestPermission().then(perm => {
     document.getElementById('notif-banner').classList.remove('show');
     if (perm === 'granted') {
-      showToast('Meal alerts ON. No excuses.');
+      showToast('Alerts on. Keep the app open for reminders.');
       scheduleNotifications();
     } else {
       showToast('Notifications blocked. Turn them on in settings.');
@@ -2930,6 +2930,11 @@ function registerSW() {
 ============================================= */
 function init() {
   registerSW();
+
+  // Request persistent storage so browser doesn't evict localStorage data
+  if (navigator.storage && navigator.storage.persist) {
+    navigator.storage.persist();
+  }
 
   if (!checkSetupLink()) {
     const profile = getActiveProfile();
