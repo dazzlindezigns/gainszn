@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gainszn-v3';
+const CACHE_NAME = 'gainszn-v4';
 const ASSETS = [
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
