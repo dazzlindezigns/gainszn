@@ -483,7 +483,7 @@
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.85);
-      z-index: 100;
+      z-index: 500;
       padding: 20px;
       align-items: flex-end;
       justify-content: center;
@@ -2690,15 +2690,25 @@ async function signUpParent() {
   const btn = document.getElementById('auth-btn-create');
   btn.textContent = 'Creating...'; btn.disabled = true;
   const { data, error } = await sb.auth.signUp({ email, password });
-  btn.textContent = 'CREATE ACCOUNT'; btn.disabled = false;
-  if (error) { setAuthError('signup-error', error.message); return; }
-  if (data.session) {
-    currentUser = data.user;
-    currentRole = 'parent';
-    showParentApp([]);
+  if (error) { btn.textContent = 'CREATE ACCOUNT'; btn.disabled = false; setAuthError('signup-error', error.message); return; }
+
+  let session = data.session;
+  if (!session) {
+    const { data: si, error: sie } = await sb.auth.signInWithPassword({ email, password });
+    if (sie || !si.session) {
+      btn.textContent = 'CREATE ACCOUNT'; btn.disabled = false;
+      setAuthError('signup-error', 'Account created — sign in to continue.');
+      showParentSignin();
+      return;
+    }
+    session = si.session;
+    currentUser = si.user;
   } else {
-    setAuthError('signup-error', 'Check your email to confirm your account, then sign in.');
+    currentUser = data.user;
   }
+  btn.textContent = 'CREATE ACCOUNT'; btn.disabled = false;
+  currentRole = 'parent';
+  showParentApp([]);
 }
 
 async function submitAthleteSignup() {
